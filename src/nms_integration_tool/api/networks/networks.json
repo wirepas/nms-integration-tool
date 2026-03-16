@@ -1,0 +1,1726 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WM network metadata service API",
+    "description": "API for the Wirepas network metadata service",
+    "version": "1.3.0",
+    "termsOfService": "https://www.wirepas.com",
+    "contact": {
+      "name": "Wirepas Support",
+      "url": "https://developer.wirepas.com/support/home",
+      "email": "support@wirepas.com"
+    },
+    "license": {
+      "name": "Wirepas license",
+      "url": "https://www.wirepas.com/licensing"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Network metadata service"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Network metadata",
+      "description": "WM network metadata management"
+    }
+  ],
+  "paths": {
+    "/metadata/networks": {
+      "get": {
+        "operationId": "getNetworks",
+        "summary": "Get a list of networks",
+        "description": "Return list of managed Wirepas Mesh networks. In general, client shall sort and page the results accordingly\nto avoid excess load on the service and communications media.\n\nThis endpoint supports simple queries with reasonable set of different filter parameters. In case of more\ncomplex queries, separate search endpoint shall be used.\n\nSee advanced search for supported query fields and pattern matching.\n",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PagingQueryLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PagingQueryCursor"
+          },
+          {
+            "$ref": "#/components/parameters/QueryFilter"
+          },
+          {
+            "$ref": "#/components/parameters/SortingQueryOrder"
+          },
+          {
+            "$ref": "#/components/parameters/QuerySelection"
+          },
+          {
+            "$ref": "#/components/parameters/QueryTotalResults"
+          },
+          {
+            "name": "sortBy",
+            "description": "The field according to which the response data shall be sorted. By default, results are sorted by the \"name\" field.",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of networks matching the query.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "description": "Actual results, i.e. the list of networks matching the request parameters. Note that the list might not be full\nresult set but contain only a partial result set (more information in metadata)\n",
+                      "items": {
+                        "$ref": "#/components/schemas/Network"
+                      }
+                    },
+                    "metadata": {
+                      "$ref": "#/components/schemas/ResponsePagingInformation"
+                    }
+                  }
+                },
+                "examples": {
+                  "getNetworksExample": {
+                    "$ref": "#/components/examples/getNetworksExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createNetworks",
+        "summary": "Create new network or networks",
+        "description": "Create a new network or a list of networks with provided parameters",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.wr"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/NetworkInfo"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "address",
+                        "name"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "examples": {
+                "newNetworkListExample": {
+                  "$ref": "#/components/examples/newNetworkListExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "New network(s) have been created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Network"
+                  }
+                },
+                "examples": {
+                  "networkListExample": {
+                    "$ref": "#/components/examples/networkListExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchNetworks",
+        "summary": "Update one or multiple networks",
+        "description": "Update the attributes of one or multiple networks. The items in the list are all updated and the return value of the operation\nreflects the success of the whole operation. Thus, all items in the list are either updated as requested by the operation,\nor no changes are made in any of the items in case of an error. All the networks identified in the operation shall be found,\notherwise the operation will fail.\n\nThe items may not be complete network objects, thus only those fields that are given are updated. It is not possible to remove\nan attribute of a network object with this operation. Instead, if that kind of functionality is needed, an update operation (PUT)\nof a specific network object shall be used.\n",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.wr"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Network"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "address": {
+                          "readOnly": true
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "examples": {
+                "updateNetworkListExample": {
+                  "$ref": "#/components/examples/updateNetworkListExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Networks have been successfully updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Network"
+                  }
+                },
+                "examples": {
+                  "updatedNetworkListExample": {
+                    "$ref": "#/components/examples/updatedNetworkListExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteNetworks",
+        "summary": "Deletes one or multiple networks",
+        "description": "Deletes one or multiple networks based on the query filter attributes given as a parameters for the request. All networks\nmatching the given query are removed, thus caution should be exercised when using this operation. The return value reflects\nthe success of the whole operation, thus either all networks matching the query are removed or none is removed in case of\nan error.\n\nThe success of the operation is based on the requested target state, e.g. if a network deletion is requested based on UUID\nof the network, the operation for that network is successful also in a case where the given network does not exist (anymore).\n",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.del"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DeleteQueryFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Networks matching the query are deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteListResponse"
+                },
+                "examples": {
+                  "deleteNetworkListResponseExample": {
+                    "$ref": "#/components/examples/deleteNetworkListResponseExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/networks/search": {
+      "post": {
+        "operationId": "searchNetworks",
+        "summary": "Advanced search of networks",
+        "description": "Search for networks with complex query parameters and conditions. The filtering and search conditions are defined\nin the request body using RSQL / FIQL, see short description from here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nIt is worth pointing out that this operation does not change the server state nor it does not save the query.\nInstead, the operation is purposed solely for providing more freedom in the definition of complex search filter\nconditions in cases where the basic filtering with query parameters would end up to extremely long URLs.\n\nQueries are case-insensitive. Pattern matching is supported in the query: an asterisk sign ('*') can be used to match zero\nor more arbitrary characters. Plain asterisk query (e.g. `name==*`) can be used for excluding null items.\n\nIf your operator is one of following <, >, <= or >= and your comparison string is only digits you can use \"str(string)\" to ensure\nit is treated as a string e.g. name>=\"str(123)\". Nested fields can be accessed with a dot operator e.g. `coordinates.latitude`.\n\nThe query rules shall use the property field names of the Network resource/object. In order to utilize array type of fields\n(`linkedLocations`) in the query filter, the searched location identifier can be given by adding nested `uuid` to the array field\nname. It is worth noting, that even if the filter targets to certain nested array elements, the results contain the main object\nand all of its fields and nested elements (honoring the field selection). As an example, in order to get all the networks linked\nto a specific location, following filter can be used:\n\n`linkedLocations.uuid==1e2f21ef-e1d9-4c66-9326-fa29d1847f2b`\n\nSimilarly, multiple location identifiers can be given with `=in=` operator to get networks linked to any of the given locations,\ne.g. as follows:\n\n`linkedLocations.uuid=in=(1e2f21ef-e1d9-4c66-9326-fa29d1847f2b,80b43985-415a-44f2-a3e2-3c8c0b8b9dcd)`\n",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.rd"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PagingParameterObject"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CommonSearchParameterObject"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "sortBy": {
+                        "description": "The field according to which the response data shall be sorted. By default, results are sorted by the \"name\" field.",
+                        "type": "string",
+                        "default": "name"
+                      },
+                      "query": {
+                        "description": "More detailed search query for limiting the request to subset of networks based on the defined filters.\nThe syntax of the query is based on RSQL / FIQL, which is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nSee more details in operation description.\n",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              "examples": {
+                "searchNetworksExample": {
+                  "$ref": "#/components/examples/searchNetworksExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A list of networks matching the query given in the request body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "description": "Actual results, i.e. the list of networks matching the request parameters. Note that the list might not be full\nresult set but contain only a partial result set (more information in metadata)\n",
+                      "items": {
+                        "$ref": "#/components/schemas/Network"
+                      }
+                    },
+                    "metadata": {
+                      "$ref": "#/components/schemas/ResponsePagingInformation"
+                    }
+                  }
+                },
+                "examples": {
+                  "getNetworksExample": {
+                    "$ref": "#/components/examples/getNetworksExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/networks/{networkUuid}": {
+      "get": {
+        "operationId": "getNetworkByUuid",
+        "summary": "Obtain information about a network",
+        "description": "Obtain information about a specific network identified by the UUID",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "networkUuid",
+            "description": "UUID identifying the network the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned information of the requested network.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Network"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NetworkReadOnlyInfo"
+                    }
+                  ]
+                },
+                "examples": {
+                  "simpleNetworkExample": {
+                    "$ref": "#/components/examples/simpleNetworkExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateNetwork",
+        "summary": "Update the network",
+        "description": "Update a specific network identified by UUID with a provided object (complete object)",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "networkUuid",
+            "description": "UUID identifying the network the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NetworkInfo"
+                  },
+                  {
+                    "required": [
+                      "address",
+                      "name"
+                    ]
+                  }
+                ]
+              },
+              "examples": {
+                "updateNetworkExample": {
+                  "$ref": "#/components/examples/updateNetworkExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Network updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Network"
+                },
+                "examples": {
+                  "simpleNetworkExample": {
+                    "$ref": "#/components/examples/simpleNetworkExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchNetwork",
+        "summary": "Partially/patch update the network",
+        "description": "Update the given fields in a specific network identified by UUID.\n\n**NOTE:** The item given in the body may not be a complete network object, thus only those fields that are given are updated.\n",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "networkUuid",
+            "description": "UUID identifying the network the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NetworkInfo"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "readOnly": true
+                      }
+                    }
+                  }
+                ]
+              },
+              "examples": {
+                "patchUpdateNetworkExample": {
+                  "$ref": "#/components/examples/patchUpdateNetworkExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Network updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Network"
+                },
+                "examples": {
+                  "patchUpdatedNetworkExample": {
+                    "$ref": "#/components/examples/patchUpdatedNetworkExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteNetwork",
+        "summary": "Delete the network",
+        "description": "Delete the network identified by the UUID. Removes the network from managed objects.",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.del"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "networkUuid",
+            "description": "UUID identifying the network the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Network deleted successfully or already deleted."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/networks/{networkUuid}/linkedLocations": {
+      "get": {
+        "operationId": "getNetworkLinkedLocations",
+        "summary": "Get a list of locations linked to then network identified by UUID",
+        "description": "Returns list of locations linked to the given network. While this supports query filter parameterization,\nit is probably more reasonable to filter at the network level. If the filter is given at this level, the\nreturned list contains the list of UUIDs for those locations that are linked to this network and match the\ngiven filter.\n",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "networkUuid",
+            "description": "UUID identifying the network to which the location linkage request is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/QueryFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of locations linked to the network (matching the UUIDs given in the query filter if any).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "description": "A list of location UUIDs",
+                  "items": {
+                    "type": "string",
+                    "description": "A UUID of the linked location resource",
+                    "format": "uuid"
+                  }
+                },
+                "examples": {
+                  "networkLinkedLocationsExample": {
+                    "$ref": "#/components/examples/networkLinkedLocationsExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "operationId": "addNetworkLinkedLocations",
+        "summary": "Adds locations linked to the network",
+        "description": "Add a location or locations linked to the given network. It is worth noting that this does not replace existing location linkages. An\nattempt to add a same location twice will return an error.\n",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "networkUuid",
+            "description": "UUID identifying the network to which the location linkage addition request is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "A list of location UUIDs to be added",
+                "items": {
+                  "type": "string",
+                  "description": "A UUID of the location resource to be linked",
+                  "format": "uuid"
+                }
+              },
+              "examples": {
+                "networkLinkedLocationsExample": {
+                  "$ref": "#/components/examples/networkLinkedLocationsExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "New linked locations added to the network",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "description": "A list of location UUIDs added to the network",
+                  "items": {
+                    "type": "string",
+                    "description": "A UUID of the added location resource",
+                    "format": "uuid"
+                  }
+                },
+                "examples": {
+                  "networkLinkedLocationsExample": {
+                    "$ref": "#/components/examples/networkLinkedLocationsExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeNetworkLinkedLocations",
+        "summary": "Remove one or multiple location linkages from the network",
+        "description": "Remove one or multiple location linkages from a network. Linked locations from a network are removed based on the query filter\nattributes given as a parameters for the request. All linked locations matching the given query are removed. The return value\nreflects the success of the whole operation, thus either all matching location references are removed from the network or none\nis removed in case of an error.\n\nThe success of the operation is based on the requested target state, e.g. if a location reference removal is requested based\non the locationUuid of the entry, the operation is successful also in a case where there is no relation to the given location.\n",
+        "tags": [
+          "Network metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.net.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "networkUuid",
+            "description": "UUID identifying the network to which the location linkage removal request is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/DeleteQueryFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Location linkages matching the query filter are removed from the network.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteListResponse"
+                },
+                "examples": {
+                  "removeNetworkLinkedLocationResponseExample": {
+                    "$ref": "#/components/examples/removeNetworkLinkedLocationResponseExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "WirepasAuth": {
+        "type": "openIdConnect",
+        "openIdConnectUrl": "/auth/realms/wnms/.well-known/openid-configuration"
+      }
+    },
+    "parameters": {
+      "PagingQueryLimit": {
+        "name": "limit",
+        "description": "Number of items to return in a single response. If the total number of results matching the query / request\nthen the results are limited to the given amount. In that case, the service will provide cursors that allow\ntraversing between the pages.\n\n**NOTE:** It is highly recommended to use reasonable page sizes especially if connecting from a client\napplication. However, the maximum value for the limit is kept quite high in order to ease integration of\ncustomer backend services.\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20000,
+          "default": 1000
+        }
+      },
+      "PagingQueryCursor": {
+        "name": "cursor",
+        "description": "Cursor pointing to the next / first item to be returned",
+        "style": "form",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "QueryFilter": {
+        "name": "query",
+        "description": "More detailed search query for limiting the request to subset of nodes based on the defined filters.\nThe syntax of the query is based on RSQL / FIQL, which is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nNote that the maximum length of the query string in the parameters is limited. If more advanced search parameters are\nrequired, use the dedicated search endpoint if available.\n\nQueries are case-insensitive. Pattern matching is supported in the query filter: an asterisk sign ('*') can be used to match\nzero or more arbitrary characters. Plain asterisk query (e.g. `name==*`) can be used for excluding null items.\n\nIf your operator is one of following <, >, <= or >= and your comparison string is only digits you can use \"str(string)\" to ensure it is treated as a string e.g. name>=\"str(123)\".\nNested fields can be accessed with a dot operator: `parent.children`\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 4096
+        },
+        "examples": {
+          "simple": {
+            "value": "modificationTime=ge=1"
+          },
+          "network": {
+            "value": "networkUuid==eb5ca0fd-32eb-4646-bc53-21c19d185848"
+          },
+          "wildcard": {
+            "value": "name==Wildcar*;description==*ldcards"
+          },
+          "array": {
+            "value": "uuid=in=(2f429250-25d1-11ec-9621-0242ac130002,b6862f56-0e08-4f37-b254-f4a5064201c8)"
+          },
+          "multiple": {
+            "value": "networkUuid==eb5ca0fd-32eb-4646-bc53-21c19d185848;modificationTime=gt=1637670000"
+          }
+        }
+      },
+      "DeleteQueryFilter": {
+        "name": "query",
+        "description": "Detailed query for limiting the delete request to a subset of nodes based on the defined filters. The syntax of the query is\nbased on RSQL / FIQL similarly to search queries. RSQL is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nExplicit query filter is required parameter for the delete queries. Thus, performing a delete operation for multiple resources\nat a time is not allowed without the query limiting the targeted entities. Wildcards etc. are allowed to target a larger set\nof nodes.\n\nSee search query for more detailed description of the syntax and supported fields.\n",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 4096
+        },
+        "examples": {
+          "wildcard": {
+            "value": "name==Wildcar*"
+          },
+          "array": {
+            "value": "uuid=in=(2f429250-25d1-11ec-9621-0242ac130002,b6862f56-0e08-4f37-b254-f4a5064201c8)"
+          }
+        }
+      },
+      "SortingQueryOrder": {
+        "name": "order",
+        "description": "Desired ordering of sorted results, either `asc` (ascending) or `desc` (descending). By default, results are sorted in\nascending order (`asc`).\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc"
+        }
+      },
+      "QuerySelection": {
+        "name": "fields",
+        "description": "Desired selection of fields to be returned with results. Uuid and sortBy field are always selected by default.",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "QueryTotalResults": {
+        "name": "totalResultsCountOnly",
+        "description": "When this parameter is given and set to `true`, the query response contains only the metadata part with the `totalResultsCount` field giving the count of objects matching\nthe query filter in the request. When this parameter is given, `cursor` and `fields` parameters are not allowed. Other parameters (like `limit`) are ignored.\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "boolean"
+        }
+      }
+    },
+    "schemas": {
+      "BaseObject": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "description": "Globally unique ID (UUID) used for identifying the API resource",
+            "type": "string",
+            "format": "uuid"
+          },
+          "modificationTime": {
+            "description": "Epoch timestamp for the last modification time of the object",
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "uuid"
+        ]
+      },
+      "MetadataBaseObject": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Short descriptive name for the metadata resource. If not explicitly set, the system will generate the\nname based on the low level identifier of the resource.\n",
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "description": "More versatile description of the metadata resource. This is optional information, i.e. there is no\ndefault content for this field.\n",
+            "type": "string"
+          },
+          "custom": {
+            "description": "A freeform dictionary that clients can utilize for storing their own metadata related to the managed resource.\nThe main intention of the custom fields is to allow clients to manage the relations between the client side data\nobjects and corresponding Wirepas NMS data object. Thus, client can e.g. add a custom field for storing the\ninternal identifier of managed asset to which the corresponding Wirepas node or gateway is linked to. Naturally,\nas the fields are fully customizable other usage purposes are possible.\n\nThe data management of the custom fields differ slightly from other fields or attributes in managed resources or\nobjects. The main difference is that the contents of `custom` field itself shall always be considered as single\nmanaged field. Thus, when adding new fields as well as when updating or removing existing fields to/from the `custom`,\nall the custom fields shall be given. I.e. the provided custom fields directly reflect the end state of the whole\n`custom` field after the operation. This is mainly relevant for PATCH update operations, which differ from other fields.\n",
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "Network": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/MetadataBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/NetworkModel"
+          },
+          {
+            "$ref": "#/components/schemas/NetworkLinkedLocationsInfo"
+          }
+        ]
+      },
+      "NetworkInfo": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/NetworkModel"
+          }
+        ]
+      },
+      "NetworkModel": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "description": "Wirepas low level network address for this network (must comply with addressing limitations)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16777214
+          }
+        }
+      },
+      "NetworkLinkedLocationsInfo": {
+        "type": "object",
+        "properties": {
+          "linkedLocations": {
+            "description": "A list of locations this network is linked to. In general, the objective of the network level location linkage is to allow clients\nto define \"top level\" location(s) to which the network is roughly deployed to. However, this linkage is merely indicative, thus it\ndoes not set any constraints at the low level. Instead, the client can use the information to control the filtering and selection\ndialogs within the scope of this network.\n\nThe recommendation is to use top level locations for the linkage. The implementation does not force this, but instead it mandates\nthat all the locations linked to a given network are of same type.\n\nThis field is not directly writable, instead, the contents can be managed via a separate per network `linkedLocations` endpoint.\n",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "readOnly": true
+            },
+            "readOnly": true
+          }
+        }
+      },
+      "NetworkReadOnlyInfo": {
+        "type": "object",
+        "properties": {
+          "networkInfo": {
+            "description": "Read only information about the low level parameters of the Wirepas Mesh network. This includes data defining the Mesh network radio\nprofile and some key communication parameters related to the network. If some information is not readily available, it is not provided.\n",
+            "type": "object",
+            "properties": {
+              "radioProfile": {
+                "$ref": "#/components/schemas/MeshRadioProfile"
+              },
+              "networkChannel": {
+                "description": "Wirepas Mesh network low level network control channel used for network discovery and coordination.\n",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535,
+                "readOnly": true
+              }
+            },
+            "readOnly": true
+          }
+        }
+      },
+      "MeshRadioProfile": {
+        "description": "The low level radio profile of the network. The radio profile is defined by the actual hardware and its configuration, thus it cannot\nbe configured or changed. It is also worth noting that even though all profiles have somewhat identical Wirepas Mesh stack, each radio\nprofile have unique characteristics resulting from the radio frequency and modulation.\n\nThe possible radio profiles for a Wirepas Mesh network are following:\n\n- `ISM_24GHZ`: Proprietary Wirepas Mesh radio profile on top of Bluetooth Low Energy (BLE) physical layer\n- `SUB_INDIA865`: Proprietary SubGHz Wirepas Mesh radio profile compatible with India regulation and frequency bands\n- `DECT_TS_103_874_2_BAND_1`: 5G Mesh radio profile operating on global 1.9GHz DECT frequency band\n- `DECT_TS_103_874_2_BAND_4`: 5G Mesh radio profile operating on 915MHz ISM band compliant with North America regulation and frequency bands\n- `DECT_TS_103_874_2_BAND_9`: 5G Mesh radio profile operating on 1.9GHz frequency compliant with North America regulation and frequency bands\n",
+        "type": "string",
+        "enum": [
+          "ISM_24GHZ",
+          "SUB_INDIA865",
+          "DECT_TS_103_874_2_BAND_1",
+          "DECT_TS_103_874_2_BAND_4",
+          "DECT_TS_103_874_2_BAND_9"
+        ],
+        "readOnly": true
+      },
+      "ResponsePagingInformation": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "totalResultsCount": {
+                "description": "Total number of items matching the given query. This field is only available in the response\nwhen totalResultsCountOnly=true is given as a query parameter. Cursor values are not returned\nin the response.\n",
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/SimpleResponsePagingInformation"
+          }
+        ]
+      },
+      "PagingParameterObject": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Number of items to return in a single response. If the total number of results matching the query / request\nthen the results are limited to the given amount. In that case, the service will provide cursors that allow\ntraversing between the pages.\n\n**NOTE:** It is highly recommended to use reasonable page sizes especially if connecting from a client\napplication. However, the maximum value for the limit is kept quite high in order to ease integration of\ncustomer backend services.\n",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 1000
+          },
+          "cursor": {
+            "description": "Cursor pointing to the next / first item to be returned",
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      },
+      "CommonSearchParameterObject": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "description": "Desired ordering of sorted results, either `asc` (ascending) or `desc` (descending)",
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
+          },
+          "fields": {
+            "description": "Desired selection of fields to be returned with results. Uuid and sortBy field are always selected by default.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalResultsCountOnly": {
+            "description": "If set to true, only total results count matching query, ignoring cursor is returned in metadata response.",
+            "type": "boolean"
+          }
+        }
+      },
+      "FreeFormObject": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Common error response resource sent in case of server error",
+        "properties": {
+          "errorCode": {
+            "$ref": "#/components/schemas/WirepasErrorCode"
+          },
+          "message": {
+            "description": "Short descriptive error message in English",
+            "type": "string"
+          },
+          "details": {
+            "allOf": [
+              {
+                "description": "More detailed information about the error if seen necessary. The information provided in the details\ndepends on the Wirepas error given in the errorCode (see more information from the error code\ndescriptions). If no details are available, then the details field is not given or is empty. The\ndetails field is encoded in JSON format. If the input was list type, then also the details field is\na list containing one or more items with error. With operations accessing a single resource, the\ndetails field contains only a single object (not an array). The possible fields in each of the item\nin the details are described per error code in the Wirepas error code descriptions.\n"
+              },
+              {
+                "$ref": "#/components/schemas/FreeFormObject"
+              }
+            ]
+          },
+          "serviceRef": {
+            "description": "Error reference identifier, which makes it possible locate related error message from server side logs.\nThis is mainly purposed for development time use, but can be benefit also when tracking production system\nproblems.\n",
+            "type": "object",
+            "properties": {
+              "serviceId": {
+                "description": "Identifier of the backend service instance being a source of the error",
+                "type": "string"
+              },
+              "errorRef": {
+                "description": "UUID type of reference to the error, which can be used to track error from server side",
+                "type": "string"
+              }
+            },
+            "required": [
+              "serviceId",
+              "errorRef"
+            ]
+          }
+        },
+        "required": [
+          "errorCode",
+          "message",
+          "serviceRef"
+        ]
+      },
+      "WirepasErrorCode": {
+        "description": "More detailed error codes describing the reason for failures. These error codes are specific\nto Wirepas backend services. The main objective of the error codes is to give more information\nrelated to the potential cause of an failure in operation. These can be then benefit e.g. when\ngiving error indications to actual end users, in internalization of error responses etc.\n\nThe error codes are mainly related to the scenarios, where server returns HTTP error 400 (Bad\nRequest) or 500 (Internal Server Error). However, an Wirepas error code might be included also in\nother errors, but the added information in these cases might be quite minimal.\n\nThe Wirepas error codes can be categorized to following groups:\n* **Client data errors**: Error codes describing the erroneous data provided by the client\n* **Client request errors**: Other client request related error codes\n* **System error codes**: Error codes giving some background on potential system level problems\n\nIn some of the cases, the details field may contain more information about the error. The details\nfield is encoded in JSON format. The contents do not have standard format, thus parsing it is not\nrecommended. Instead, it is purposed mainly for development time and debug purposes for providing\nmore insights to the actual cause of the error.\n\nThe actual error codes are listed below per category.\n\n**Client data errors**:\n* `WERR_UNKNOWN_RESOURCE`: Identified request object(s) are not found from the system. Details field\n  in the response may identify the unknown resources.\n* `WERR_UNKNOWN_FIELD`: Request object(s) contain unknown fields. Details field in the response may\n  identify the unknown resources.\n* `WERR_INVALID_FIELD_VALUE`: Values of field(s) in the request is not acceptable. Details may contain\n  information identifying the resources and fields involved.\n* `WERR_INVALID_IDENTIFIER`: The value given for the identifier field in an object is invalid. This does not\n  refer to the UUID of the object but the real world identifiers (such as network or node addresses). Details\n  field may contain additional information about the error.\n* `WERR_DUPLICATE_IDENTIFIER`: The identifier for an object is already allocated and therefore does not meet\n  the unique constraint. This does not refer to the UUID of the object but the real world identifiers (such\n  as network and node addresses). Details field may contain additional information about the error.\n* `WERR_INVALID_REFERENCE`: The reference object identifier given in the request is invalid or cannot be\n  found. Details may contain more information about erroneous objects and references.\n* `WERR_RESOURCE_IN_USE`: The resource being deleted is in use or referenced by another object so that it\n  cannot be deleted before it is freed or references removed.\n\n**Client request errors**:\n* `WERR_API_VALIDATION`: The request does not meet the requirements and constraints defined by the API\n  specification. Typical causes are e.g. malformed content, missing required fields, incorrect types or enum\n  fields, or illegal values not meeting the given (e.g. min/max) constraints.\n* `WERR_INVALID_CREDENTIALS`: The credentials provided with the client request are not available or invalid.\n* `WERR_ACCESS_NOT_ALLOWED_OPERATION`: The client does not have enough rights to perform the requested operation.\n* `WERR_ACCESS_NOT_ALLOWED_DATA`: The client does not have rights to access the requested resource.\n* `WERR_INVALID_PARAMETERS`: The URL parameters given for the request are invalid. The details may contain\n  a list of invalid parameters (InvalidParams).\n* `WERR_INVALID_HEADERS`: The header fields in request are invalid, contain invalid values, etc. The details\n  may contain a list of invalid parameters (InvalidParams).\n* `WERR_INVALID_CONTENT`: The content body of the request has invalid format / encoding.\n* `WERR_CONTENT_TOO_LARGE`: The provided content body is too large for the service to handle.\n* `WERR_MISSING_CONTENT`: The content is missing for a request that expects to have content.\n* `WERR_INVALID_QUERY`: The query filter given as a parameter for GET or advanced search request has invalid\n  syntax or contain invalid fields. Details may contain a list of invalid fields (errorFields).\n* `WERR_INVALID_QUERY_PARAMETERS`: Some of the other parameters for the search query (limit, sortBy, order,\n  or cursor) is incorrect or mismatches against other fields (e.g. cursor not matching the current parameters).\n* `WERR_INVALID_STATE`: The requested state change operation of an object is not allowed given the current\n  state of the target resource.\n* `WERR_STATE_CHANGE_NOT_ALLOWED`: The requested state change operation was not allowed (see message for further details).\n* `WERR_FAILED_RESOURCES`: The requested operation failed because there are or were failed resources or operations that\n  need to be managed before continuing.\n* `WERR_OVERLAPPING_OPERATION`: The requested operation failed, since there is an overlapping operation preventing the\n  requested operation.\n* `WERR_PRECONDITION_ERROR`: The requested operation failed because needed preconditions were not met.\n  The error cannot be bypassed with the force flag, instead the fulfilling of the preconditions must be waited on.\n* `WERR_PRECONDITION_VALIDATION`: The requested operation failed because needed preconditions were not met,\n  but the error can be bypassed using the force flag.\n\n**System error codes**:\n* `WERR_DATABASE_ERROR`: The requested operation failed due to a database connection or request failure. See\n  more details on the backend system logs.\n* `WERR_MESSAGING_ERROR`: The requested operation failed due to an internal messaging error at the backend. See\n  more details on the backend system logs.\n* `WERR_OPERATION_TIMEOUT`: The requested operation failed due to an internal operation timeout. See more\n  details on the backend system logs.\n* `WERR_GENERAL_ERROR`: The requested operation failed due to an unknown internal error at the backend. See\n  more details on the backend system logs.\n",
+        "type": "string",
+        "enum": [
+          "WERR_UNKNOWN_RESOURCE",
+          "WERR_UNKNOWN_FIELD",
+          "WERR_INVALID_FIELD_VALUE",
+          "WERR_INVALID_IDENTIFIER",
+          "WERR_DUPLICATE_IDENTIFIER",
+          "WERR_INVALID_REFERENCE",
+          "WERR_RESOURCE_IN_USE",
+          "WERR_API_VALIDATION",
+          "WERR_INVALID_CREDENTIALS",
+          "WERR_ACCESS_NOT_ALLOWED_OPERATION",
+          "WERR_ACCESS_NOT_ALLOWED_DATA",
+          "WERR_INVALID_PARAMETERS",
+          "WERR_INVALID_HEADERS",
+          "WERR_INVALID_CONTENT",
+          "WERR_CONTENT_TOO_LARGE",
+          "WERR_MISSING_CONTENT",
+          "WERR_INVALID_QUERY",
+          "WERR_INVALID_QUERY_PARAMETERS",
+          "WERR_INVALID_STATE",
+          "WERR_STATE_CHANGE_NOT_ALLOWED",
+          "WERR_FAILED_RESOURCES",
+          "WERR_OVERLAPPING_OPERATION",
+          "WERR_PRECONDITION_ERROR",
+          "WERR_PRECONDITION_VALIDATION",
+          "WERR_DATABASE_ERROR",
+          "WERR_MESSAGING_ERROR",
+          "WERR_OPERATION_TIMEOUT",
+          "WERR_GENERAL_ERROR"
+        ]
+      },
+      "DeleteListResponse": {
+        "type": "object",
+        "description": "List of deleted items and metadata related to the delete operation",
+        "properties": {
+          "deletedItems": {
+            "type": "array",
+            "description": "The list of UUIDs identifying the items that were deleted.",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Metadata about the delete operation",
+            "properties": {
+              "deletedCount": {
+                "description": "Number of items deleted with this operation",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "deletedCount"
+            ]
+          }
+        },
+        "required": [
+          "deletedItems",
+          "metadata"
+        ]
+      },
+      "SimpleResponsePagingInformation": {
+        "type": "object",
+        "properties": {
+          "resultsCount": {
+            "description": "The number of items returned in the result list.",
+            "type": "integer"
+          },
+          "nextCursor": {
+            "description": "A cursor pointing to the \"next\" data set, i.e. this should be given as a cursor parameter\nin the following request to get the following page in results. This is empty, if there is no\nfollowing page.\n",
+            "type": "string",
+            "format": "byte"
+          },
+          "prevCursor": {
+            "description": "A cursor pointing to the \"previous\" data set, thus when traversing backwards within the result\nset, this should be given as a cursor parameter in the following request. When this is empty,\nthere is no previous page.\n",
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Error caused by invalid client request. Potential causes are malformed request, invalid data\nfields, potential conflicts in data, etc.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "unknownResourceListErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_RESOURCE",
+                  "message": "Resource not found from service",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "71142ad3-631b-4b66-9b6e-214bd9ab1101"
+                  }
+                }
+              },
+              "unknownFieldSingleErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_FIELD",
+                  "message": "Unknown field in request",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "1d9b547d-efd1-4c44-a33c-9d954e0b5051"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Client did not provide required credentials with the request and is thus not unauthorized perform\nthe request. Client may attempt the operation again after authenticating.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notAllowedErrorExample": {
+                "value": {
+                  "errorCode": "WERR_INVALID_CREDENTIALS",
+                  "message": "None or invalid credentials provided in the request.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "4d81a884-022f-49d1-9475-03a6b5d7a86b"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Client is not authorized to complete the request. The permissions granted to the client during the\nauthentication do not allow either performing the requested operation (e.g. POST) or access the\nrequested resource object.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notAllowedErrorExample": {
+                "value": {
+                  "errorCode": "WERR_ACCESS_NOT_ALLOWED_OPERATION",
+                  "message": "Not enough privileges to perform requested operation",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "c9dc4b26-6f6a-4977-850c-8d3e5695c51b"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Requested resource is not found from the server. This can be caused either by invalid URL or by the fact\nthat the resource identified by the UUID is not anymore found from the server.\n\nThis response may not contain additional error response content.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notFoundErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_RESOURCE",
+                  "message": "Resource not found from service",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "49b5af2b-222e-4444-886a-9d11aaaeeeff"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Error caused by client request that is conflicting with the current server state. This error can be caused e.g.\nby an attempt to modify a non-changeable identifier field, a delete request to an object that is referenced by\nanother object with as a mandatory requirement, or an invalid state transition request.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "conflictIdentifierErrorExample": {
+                "value": {
+                  "errorCode": "WERR_INVALID_IDENTIFIER",
+                  "message": "Identifier cannot be changed once set.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "00903f91-beaa-4a3f-a666-b043c59b2f31"
+                  }
+                }
+              },
+              "conflictInUseErrorExample": {
+                "value": {
+                  "errorCode": "WERR_RESOURCE_IN_USE",
+                  "message": "Resource is in use.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "70494050-5715-4454-9a11-1501d9d227c1"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error occurred during the processing of the request. In general, this is caused by some\nunexpected system error (e.g. unavailability of system resources, database problems, etc.).\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "timeoutErrorExample": {
+                "value": {
+                  "errorCode": "WERR_OPERATION_TIMEOUT",
+                  "message": "Requested operation timed out",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "507b535f-5acd-41f9-80d8-eee1258d6cf6"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DefaultErrorResponse": {
+        "description": "Unexpected error when handling the request. More details about the potential reason of the error are\ngiven by the HTTP error code. See e.g. https://developer.mozilla.org/en-US/docs/Web/HTTP/Status for list\nof all HTTP error codes.\n\nThe response may not contain additional error response content in the message body.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "examples": {
+      "getNetworksExample": {
+        "value": {
+          "results": [
+            {
+              "uuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+              "address": 11,
+              "name": "Simple Network",
+              "linkedLocations": [
+                "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b"
+              ],
+              "modificationTime": 1637678502
+            },
+            {
+              "uuid": "e1c13899-dfc5-40e8-a35d-d61c73f552aa",
+              "address": 222,
+              "name": "Example Network",
+              "modificationTime": 1637676879
+            }
+          ],
+          "metadata": {
+            "resultsCount": 2
+          }
+        }
+      },
+      "newNetworkListExample": {
+        "value": [
+          {
+            "address": 11,
+            "name": "Simple Network"
+          },
+          {
+            "address": 222,
+            "name": "Example Network"
+          }
+        ]
+      },
+      "networkListExample": {
+        "value": [
+          {
+            "uuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "address": 11,
+            "name": "Simple Network",
+            "linkedLocations": [
+              "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b"
+            ],
+            "modificationTime": 1637678502
+          },
+          {
+            "uuid": "e1c13899-dfc5-40e8-a35d-d61c73f552aa",
+            "address": 222,
+            "name": "Example Network",
+            "modificationTime": 1637676879
+          }
+        ]
+      },
+      "deleteNetworkListResponseExample": {
+        "value": {
+          "deletedItems": [
+            "e1c13899-dfc5-40e8-a35d-d61c73f552aa"
+          ],
+          "metadata": {
+            "deletedCount": 1
+          }
+        }
+      },
+      "updateNetworkListExample": {
+        "value": [
+          {
+            "uuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "name": "Updated simple network"
+          }
+        ]
+      },
+      "updatedNetworkListExample": {
+        "value": [
+          {
+            "uuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "name": "Updated simple network",
+            "address": 11
+          }
+        ]
+      },
+      "searchNetworksExample": {
+        "value": {
+          "limit": 100,
+          "cursor": "Zj1uYW1lO25leHRVdWlkPTJmNDI5MjUwLTI1ZDEtMTFlYy05NjIxLTAyNDJhYzEzMDAwMgo=",
+          "sortBy": "name",
+          "order": "asc",
+          "query": "networkUuid==eb5ca0fd-32eb-4646-bc53-21c19d185848",
+          "fields": [
+            "uuid",
+            "name"
+          ]
+        }
+      },
+      "simpleNetworkExample": {
+        "value": {
+          "uuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+          "address": 11,
+          "name": "Simple Network",
+          "modificationTime": 1637678502,
+          "linkedLocations": [
+            "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b"
+          ],
+          "networkInfo": {
+            "radioProfile": "ISM_24GHZ",
+            "networkChannel": 5
+          }
+        }
+      },
+      "updateNetworkExample": {
+        "value": {
+          "address": 222,
+          "name": "Example Network"
+        }
+      },
+      "patchUpdateNetworkExample": {
+        "value": {
+          "name": "Updated example network"
+        }
+      },
+      "patchUpdatedNetworkExample": {
+        "value": {
+          "uuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+          "address": 11,
+          "name": "Updated example network",
+          "modificationTime": 1637678814
+        }
+      },
+      "networkLinkedLocationsExample": {
+        "value": [
+          "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b"
+        ]
+      },
+      "removeNetworkLinkedLocationResponseExample": {
+        "value": {
+          "deletedItems": [
+            "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b"
+          ],
+          "metadata": {
+            "deletedCount": 1
+          }
+        }
+      }
+    }
+  }
+}

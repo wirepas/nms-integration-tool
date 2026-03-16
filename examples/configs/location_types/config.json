@@ -1,0 +1,13 @@
+{
+    "locationHierarchy": [
+        {"type": "Region", "key": "Region Name", "children": [
+            {"type": "Village", "key": "Village Name"}
+        ]},
+        {"type": "Country", "key": "Country Name", "children": [
+            {"type": "Town", "key": "Town Name"},
+            {"type": "City", "key": "City Name", "children": [
+                {"type": "Suburb", "key": "Suburb Name"}
+            ]}
+        ]}
+    ]
+}

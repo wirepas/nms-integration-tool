@@ -1,0 +1,9 @@
+{
+    "custom": {
+        "customField1": "custom_field1",
+        "customField2": "custom_field2"
+    },
+    "description": "description",
+    "name": "name",
+    "address": "address"
+}

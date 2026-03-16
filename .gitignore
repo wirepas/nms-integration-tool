@@ -1,0 +1,30 @@
+build/
+dist/
+internal/
+**/*.py[cod]
+**/__pycache__
+*.log
+.vscode/
+**/*.cfg
+*.egg-info
+
+# Virtual env dirs
+.venv
+venv
+.env
+
+# JetBrains
+.idea
+
+data
+
+# Enable custom configs
+examples/custom_configs
+examples/data
+
+# UV
+uv.lock
+
+# Claud
+.claude
+/.claude/

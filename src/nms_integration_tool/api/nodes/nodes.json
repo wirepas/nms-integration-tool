@@ -1,0 +1,1990 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WM node metadata service API",
+    "description": "API for the Wirepas node metadata service",
+    "version": "1.3.0",
+    "termsOfService": "https://www.wirepas.com",
+    "contact": {
+      "name": "Wirepas Support",
+      "url": "https://developer.wirepas.com/support/home",
+      "email": "support@wirepas.com"
+    },
+    "license": {
+      "name": "Wirepas license",
+      "url": "https://www.wirepas.com/licensing"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Node metadata service"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Node metadata",
+      "description": "Wirepas node metadata management"
+    }
+  ],
+  "paths": {
+    "/metadata/nodes": {
+      "get": {
+        "operationId": "getNodes",
+        "summary": "Get a list of nodes",
+        "description": "Returns list of managed Wirepas nodes. In general, client shall sort and page the results accordingly to\navoid excess load on the service and communications media.\n\nThis endpoint supports simple queries with reasonable set of different filter parameters. In case of more\ncomplex queries, separate search endpoint shall be used.\n\nSee advanced search for supported query fields and pattern matching.\n",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PagingQueryLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PagingQueryCursor"
+          },
+          {
+            "$ref": "#/components/parameters/QueryFilter"
+          },
+          {
+            "$ref": "#/components/parameters/SortingQueryOrder"
+          },
+          {
+            "$ref": "#/components/parameters/QuerySelection"
+          },
+          {
+            "$ref": "#/components/parameters/QueryTotalResults"
+          },
+          {
+            "name": "sortBy",
+            "description": "The field according to which the response data shall be sorted. By default, results are sorted by the \"name\" field.",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of nodes matching the query.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "description": "Actual results, i.e. the list of nodes matching the request parameters. Note that the list might not be full\nresult set but contain only a partial result set (more information in metadata)\n",
+                      "items": {
+                        "$ref": "#/components/schemas/Node"
+                      }
+                    },
+                    "metadata": {
+                      "$ref": "#/components/schemas/ResponsePagingInformation"
+                    }
+                  }
+                },
+                "examples": {
+                  "getNodesExample": {
+                    "$ref": "#/components/examples/getNodesExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createNodes",
+        "summary": "Create new node or nodes",
+        "description": "Create a new node or a list of nodes with provided parameters",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.wr"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/NodeInfo"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "isVirtual": {
+                          "default": false
+                        },
+                        "coordinates": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/Coordinates"
+                            },
+                            {
+                              "required": [
+                                "latitude",
+                                "longitude",
+                                "altitude"
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "networkUuid"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "examples": {
+                "newNodeListExample": {
+                  "$ref": "#/components/examples/newNodeListExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "New node(s) have been created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Node"
+                  }
+                },
+                "examples": {
+                  "nodeListExample": {
+                    "$ref": "#/components/examples/nodeListExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchNodes",
+        "summary": "Update one or multiple nodes",
+        "description": "Update the attributes of one or multiple nodes. The items in the list are all updated and the return value of the operation\nreflects the success of the whole operation. Thus, all items in the list are either updated as requested by the operation,\nor no changes are made in any of the items in case of an error. All the nodes identified in the operation shall be found,\notherwise the operation will fail.\n\nThe items may not be complete node objects, thus only those fields that are given are updated. It is not possible to remove\nan attribute of a node with this operation. If that kind of functionality is needed, an update operation (PUT) of a specific\nnode object shall be used.\n",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.wr"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Node"
+                }
+              },
+              "examples": {
+                "updateNodeListExample": {
+                  "$ref": "#/components/examples/updateNodeListExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nodes have been successfully updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Node"
+                  }
+                },
+                "examples": {
+                  "updatedNodeListExample": {
+                    "$ref": "#/components/examples/updatedNodeListExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteNodes",
+        "summary": "Deletes one or multiple nodes",
+        "description": "Deletes one or multiple nodes based on the query filter attributes given as a parameters for the request. All nodes\nmatching the given query are removed, thus caution should be exercised when using this operation. The return value reflects\nthe success of the whole operation, thus either all nodes are removed or none is removed in case of an error.\n\nThe success of the operation is based on the requested target state, e.g. if a node deletion is requested based on UUID\nof the node, the operation for that node is successful also in a case where the given node does not exist (anymore).\n\nSee advanced search for supported query fields and pattern matching.\n",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.del"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DeleteQueryFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nodes matching the query are deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteListResponse"
+                },
+                "examples": {
+                  "deleteNodeListResponseExample": {
+                    "$ref": "#/components/examples/deleteNodeListResponseExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/nodes/search": {
+      "post": {
+        "operationId": "searchNodes",
+        "summary": "Advanced search of nodes",
+        "description": "Search for nodes with complex query parameters and conditions. The filtering and search conditions are defined\nin the request body using RSQL / FIQL, see short description from here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nIt is worth pointing out that this operation does not change the server state nor it does not save the query.\nInstead, the operation is purposed solely for providing more freedom in the definition of complex search filter\nconditions in cases where the basic filtering with query parameters would end up to extremely long URLs.\n\nQueries are case-insensitive. Pattern matching is supported in the query: an asterisk sign ('*') can be used to match zero\nor more arbitrary characters. Plain asterisk query (e.g. `name==*`) can be used for excluding null items.\n\nIf your operator is one of following <, >, <= or >= and your comparison string is only digits you can use \"str(string)\" to ensure\nit is treated as a string e.g. name>=\"str(123)\". Nested fields can be accessed with a dot operator e.g. `coordinates.latitude`.\n\nIf the `locationUuid` field, either single or as an array, is used in the search filter, the query will return the nodes\nlinked to the given location(s) AND all its/their subsequent children from the location hierarchy tree. The location hierarchy\nis considered for both inclusions and exclusions.\n\nAs a special case, `sinkNodeInfo` field can be used for querying sink vs \"normal\" (non-sink) nodes as follows:\n\n- Filter `sinkNodeInfo.sinkGatewayUuid!=*` matches \"normal\" (non-sink) nodes\n- Filter `sinkNodeInfo.sinkGatewayUuid==*` matches only sink nodes\n\nThe query rules shall use the property field names of the Node resource/object. Currently, following fields are not\nsupported in the query filtering:\n\n- Contents of `serviceRefs` cannot be used (these should be queried via the respective service APIs)\n",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.rd"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PagingParameterObject"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CommonSearchParameterObject"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "sortBy": {
+                        "description": "The field according to which the response data shall be sorted. By default, results are sorted by the \"name\" field.",
+                        "type": "string",
+                        "default": "name"
+                      },
+                      "query": {
+                        "description": "More detailed search query for limiting the request to subset of nodes based on the defined filters.\nThe syntax of the query is based on RSQL / FIQL, which is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nSee more details in operation description.\n",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              "examples": {
+                "searchNodesExample": {
+                  "$ref": "#/components/examples/searchNodesExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A list of nodes matching the query given in the request body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "description": "Actual results, i.e. the list of nodes matching the request parameters. Note that the list might not be full\nresult set but contain only a partial result set (more information in metadata)\n",
+                      "items": {
+                        "$ref": "#/components/schemas/Node"
+                      }
+                    },
+                    "metadata": {
+                      "$ref": "#/components/schemas/ResponsePagingInformation"
+                    }
+                  }
+                },
+                "examples": {
+                  "getNodesExample": {
+                    "$ref": "#/components/examples/getNodesExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/nodes/{nodeUuid}": {
+      "get": {
+        "operationId": "getNodeByUuid",
+        "summary": "Obtain information about a node",
+        "description": "Obtain information about a specific node identified by the UUID",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "nodeUuid",
+            "description": "UUID identifying the node the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned information of the requested node.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                },
+                "examples": {
+                  "simpleNodeExample": {
+                    "$ref": "#/components/examples/simpleNodeExample"
+                  },
+                  "fullNodeExample": {
+                    "$ref": "#/components/examples/fullNodeExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateNode",
+        "summary": "Update the node",
+        "description": "Update the basic information and location related attributes of a specific node identified by UUID. This update operation\nexpects to get a complete object and overrides existing values with it (allowing also removal of some fields).\n",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "nodeUuid",
+            "description": "UUID identifying the node the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NodeInfo"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "isVirtual": {
+                        "default": false
+                      },
+                      "coordinates": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Coordinates"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "latitude",
+                              "longitude",
+                              "altitude"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "networkUuid"
+                    ]
+                  }
+                ]
+              },
+              "examples": {
+                "updateNodeExample": {
+                  "$ref": "#/components/examples/updateNodeExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Node updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                },
+                "examples": {
+                  "simpleNodeExample": {
+                    "$ref": "#/components/examples/simpleNodeExample"
+                  },
+                  "fullNodeExample": {
+                    "$ref": "#/components/examples/fullNodeExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchNode",
+        "summary": "Partially/patch update the node",
+        "description": "Update the given fields in a specific node identified by UUID.\n\n**NOTE:** The item given in the body may not be a complete node object, thus only those fields that are given are updated.\n",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "nodeUuid",
+            "description": "UUID identifying the node the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NodeInfo"
+              },
+              "examples": {
+                "patchUpdateNodeExample": {
+                  "$ref": "#/components/examples/patchUpdateNodeExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Node updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                },
+                "examples": {
+                  "patchUpdatedNodeExample": {
+                    "$ref": "#/components/examples/patchUpdatedNodeExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteNode",
+        "summary": "Delete the node",
+        "description": "Delete the node identified by the UUID. Removes the node from managed objects.",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.del"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "nodeUuid",
+            "description": "UUID identifying the node the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Node deleted successfully or already deleted."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/nodes/import": {
+      "post": {
+        "operationId": "importNodeProvisioningData",
+        "summary": "Import node provisioning data (CSV)",
+        "description": "Uploads a CSV file containing rows of per-device provisioning data (UID and per-device authentication and encryption keys).\nDepending on the system configuration, the CSV file whole content is required to be either plain text or encrypted\nwith Wirepas NMS specific (public) key.\n\nThe CSV file must have a header row, which defines the contents for the rows within the file.\nThe header row in the file must be the first data row in the file (comments can be added with '#').\nThe fields/columns in the CSV are classified to mandatory and optional ones. The order of the\nfields is not relevant, but will be defined by the header row.\n\nThe mandatory fields in the CSV are following:\n\n  - `uid`: Individual identifier (UUIDv4) for the node, used for device identification and whitelisting.\n  - `authenticationKey`: Device specific base64 encoded 128-bit AES key used for message integrity checking during provisioning.\n  - `encryptionKey`: Device specific base64 encoded 128-bit AES key used for message encryption and decryption checking during provisioning.\n\nThe optional fields in the CSV file facilitate the mapping of the imported information to existing nodes.\nThese fields can be populated, when the devices are pre-provisioned with the needed data. When provided\nboth fields shall be given:\n\n  - `networkAddress`: Wirepas Mesh network address pre-provisioned to the node during manufacturing\n  - `nodeAddress`: Individual node address pre-provisioned to the node during manufacturing\n\n**NOTE:** Provided network addresses are expected to be found from the system, i.e. new networks are not created based on imported data.\n\nGenerally, the CSV file is required to be encrypted, in which case the following-encryption scheme must be followed:\n\n  - The user must first generate a AES-256 encryption key.\n  - The user encrypts the AES key with Wirepas NMS public key and save to a file with extension `.key`\n  - The user encrypts the raw CSV file with the raw AES key and save it to a file. The file's extension must not be `.key`\n  - The user creates a .tar tarball file for upload consists of exactly those 2 files.\n\nThere is a helper script provided as a reference for this encryption and packaging scheme. More information related to this\ncan be found from the user guide documentation.\n",
+        "tags": [
+          "Node metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.node.prov.import"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "provisioningCsvMetadata": {
+                    "$ref": "#/components/schemas/NodeProvisioningCsvMetadata"
+                  },
+                  "provisioningCsvData": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSV file content. Header row is mandatory and must match one of the supported layouts.\nSystem configuration might require the file to be encrypted with NMS public key.\n"
+                  }
+                },
+                "required": [
+                  "provisioningCsvMetadata",
+                  "provisioningCsvData"
+                ]
+              },
+              "encoding": {
+                "provisioningCsvMetadata": {
+                  "contentType": "application/json"
+                },
+                "provisioningCsvData": {
+                  "contentType": "application/octet-stream"
+                }
+              },
+              "examples": {
+                "importNodeProvisioningDataExample": {
+                  "$ref": "#/components/examples/importNodeProvisioningDataExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Provisioning data import completed. The response summarizes processed and failed rows.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeProvisioningImportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "WirepasAuth": {
+        "type": "openIdConnect",
+        "openIdConnectUrl": "/auth/realms/wnms/.well-known/openid-configuration"
+      }
+    },
+    "parameters": {
+      "PagingQueryLimit": {
+        "name": "limit",
+        "description": "Number of items to return in a single response. If the total number of results matching the query / request\nthen the results are limited to the given amount. In that case, the service will provide cursors that allow\ntraversing between the pages.\n\n**NOTE:** It is highly recommended to use reasonable page sizes especially if connecting from a client\napplication. However, the maximum value for the limit is kept quite high in order to ease integration of\ncustomer backend services.\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20000,
+          "default": 1000
+        }
+      },
+      "PagingQueryCursor": {
+        "name": "cursor",
+        "description": "Cursor pointing to the next / first item to be returned",
+        "style": "form",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "QueryFilter": {
+        "name": "query",
+        "description": "More detailed search query for limiting the request to subset of nodes based on the defined filters.\nThe syntax of the query is based on RSQL / FIQL, which is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nNote that the maximum length of the query string in the parameters is limited. If more advanced search parameters are\nrequired, use the dedicated search endpoint if available.\n\nQueries are case-insensitive. Pattern matching is supported in the query filter: an asterisk sign ('*') can be used to match\nzero or more arbitrary characters. Plain asterisk query (e.g. `name==*`) can be used for excluding null items.\n\nIf your operator is one of following <, >, <= or >= and your comparison string is only digits you can use \"str(string)\" to ensure it is treated as a string e.g. name>=\"str(123)\".\nNested fields can be accessed with a dot operator: `parent.children`\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 4096
+        },
+        "examples": {
+          "simple": {
+            "value": "modificationTime=ge=1"
+          },
+          "network": {
+            "value": "networkUuid==eb5ca0fd-32eb-4646-bc53-21c19d185848"
+          },
+          "wildcard": {
+            "value": "name==Wildcar*;description==*ldcards"
+          },
+          "array": {
+            "value": "uuid=in=(2f429250-25d1-11ec-9621-0242ac130002,b6862f56-0e08-4f37-b254-f4a5064201c8)"
+          },
+          "multiple": {
+            "value": "networkUuid==eb5ca0fd-32eb-4646-bc53-21c19d185848;modificationTime=gt=1637670000"
+          }
+        }
+      },
+      "DeleteQueryFilter": {
+        "name": "query",
+        "description": "Detailed query for limiting the delete request to a subset of nodes based on the defined filters. The syntax of the query is\nbased on RSQL / FIQL similarly to search queries. RSQL is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nExplicit query filter is required parameter for the delete queries. Thus, performing a delete operation for multiple resources\nat a time is not allowed without the query limiting the targeted entities. Wildcards etc. are allowed to target a larger set\nof nodes.\n\nSee search query for more detailed description of the syntax and supported fields.\n",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 4096
+        },
+        "examples": {
+          "wildcard": {
+            "value": "name==Wildcar*"
+          },
+          "array": {
+            "value": "uuid=in=(2f429250-25d1-11ec-9621-0242ac130002,b6862f56-0e08-4f37-b254-f4a5064201c8)"
+          }
+        }
+      },
+      "SortingQueryOrder": {
+        "name": "order",
+        "description": "Desired ordering of sorted results, either `asc` (ascending) or `desc` (descending). By default, results are sorted in\nascending order (`asc`).\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc"
+        }
+      },
+      "QuerySelection": {
+        "name": "fields",
+        "description": "Desired selection of fields to be returned with results. Uuid and sortBy field are always selected by default.",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "QueryTotalResults": {
+        "name": "totalResultsCountOnly",
+        "description": "When this parameter is given and set to `true`, the query response contains only the metadata part with the `totalResultsCount` field giving the count of objects matching\nthe query filter in the request. When this parameter is given, `cursor` and `fields` parameters are not allowed. Other parameters (like `limit`) are ignored.\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "boolean"
+        }
+      }
+    },
+    "schemas": {
+      "BaseObject": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "description": "Globally unique ID (UUID) used for identifying the API resource",
+            "type": "string",
+            "format": "uuid"
+          },
+          "modificationTime": {
+            "description": "Epoch timestamp for the last modification time of the object",
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "uuid"
+        ]
+      },
+      "MetadataBaseObject": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Short descriptive name for the metadata resource. If not explicitly set, the system will generate the\nname based on the low level identifier of the resource.\n",
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "description": "More versatile description of the metadata resource. This is optional information, i.e. there is no\ndefault content for this field.\n",
+            "type": "string"
+          },
+          "custom": {
+            "description": "A freeform dictionary that clients can utilize for storing their own metadata related to the managed resource.\nThe main intention of the custom fields is to allow clients to manage the relations between the client side data\nobjects and corresponding Wirepas NMS data object. Thus, client can e.g. add a custom field for storing the\ninternal identifier of managed asset to which the corresponding Wirepas node or gateway is linked to. Naturally,\nas the fields are fully customizable other usage purposes are possible.\n\nThe data management of the custom fields differ slightly from other fields or attributes in managed resources or\nobjects. The main difference is that the contents of `custom` field itself shall always be considered as single\nmanaged field. Thus, when adding new fields as well as when updating or removing existing fields to/from the `custom`,\nall the custom fields shall be given. I.e. the provided custom fields directly reflect the end state of the whole\n`custom` field after the operation. This is mainly relevant for PATCH update operations, which differ from other fields.\n",
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "Node": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/MetadataBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/NodeReadOnlyExt"
+          },
+          {
+            "$ref": "#/components/schemas/NodeModel"
+          }
+        ]
+      },
+      "NodeInfo": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/NodeModel"
+          }
+        ]
+      },
+      "NodeReadOnlyExt": {
+        "type": "object",
+        "properties": {
+          "serviceRefs": {
+            "description": "*DEPRECATION NOTICE: This field will be removed, since there is no use for it anymore in the current tool version.*\n\nA dictionary of references to other Wirepas backend managed application specific metadata resources that are\nrelated to this node but owned by another service\n",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RelatedObjectReference"
+            },
+            "deprecated": true,
+            "readOnly": true
+          },
+          "sinkNodeInfo": {
+            "$ref": "#/components/schemas/SinkNodeInfo"
+          },
+          "provisioningInfo": {
+            "$ref": "#/components/schemas/NodeProvisioningInfo"
+          }
+        }
+      },
+      "NodeModel": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "description": "Wirepas node address used in the Wirepas network communications. The given address must be in valid address range defined\nin the field (excludes reserved address e.g. for multicast).\n\nIt is not recommended to change the address after the resource object has been attached to a real Wirepas node. This does\nnot change the actual address of the node but instead may associate the resource object to some other node. However,\nthis option is left open in order to fix potential mistakes during the installation time.\n",
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2147483647
+              },
+              {
+                "type": "integer",
+                "minimum": 2164260864,
+                "maximum": 4294967293
+              }
+            ]
+          },
+          "networkUuid": {
+            "description": "A reference to the network resource this node is related to",
+            "type": "string",
+            "format": "uuid"
+          },
+          "isVirtual": {
+            "description": "*DEPRECATION NOTICE: This field will be removed, since there is no support for placement planning available in the tool.*\n\nA flag that indicates that this node is not a real one but only a planned / virtual placeholder (defaults to false).\n",
+            "type": "boolean",
+            "deprecated": true
+          },
+          "locationUuid": {
+            "description": "A reference to the location resource this node is related to",
+            "type": "string",
+            "format": "uuid"
+          },
+          "coordinates": {
+            "allOf": [
+              {
+                "description": "Explicitly defined static location of the node as a coordinate point"
+              },
+              {
+                "$ref": "#/components/schemas/Coordinates"
+              }
+            ]
+          }
+        }
+      },
+      "SinkNodeInfo": {
+        "description": "The object with an additional information about sink nodes. It is defined only if the current resource is a sink node.",
+        "type": "object",
+        "properties": {
+          "sinkGatewayUuid": {
+            "description": "The UUID that identifies the sink gateway",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "readOnly": true
+      },
+      "NodeProvisioningInfo": {
+        "description": "An object providing more details related to the node provisioning and security related\ninformation. The information consists of node low level identification (UID) and per\ndevice provisioning keys, which are used for securing the provisioning handshake during initial\nprovisioning or required as a key management operation failsafe mechanism.\n\nThe information is populated by importing the key information (see `metadata/nodes/import`\nAPI). If the provisioning information is not available or the provisioning is not supported by the node,\nthis information will not be available.\n",
+        "type": "object",
+        "properties": {
+          "nodeUid": {
+            "type": "string",
+            "description": "Unique device identifier that is assigned to each node during manufacturing. It is used to identify a node during\nthe provisioning process. The UID is critical for security - it is used for whitelisting, meaning only nodes with\nknown UIDs can be provisioned and allowed to join the network. The UID is a UUIDv4 string.\n",
+            "format": "uuid",
+            "example": "22047a15-6893-4796-8ba3-3f93afe592f5",
+            "readOnly": true
+          },
+          "isKeysPopulated": {
+            "type": "boolean",
+            "description": "Flag indicating whether the provisioning keys for this device are populated in the NMS.",
+            "readOnly": true
+          },
+          "keysCRC": {
+            "type": "string",
+            "description": "16-bit checksum over the provisioning keys of the given device. It's calculated from the combined provisioning keys data\n(encryption key + authentication key). The CRC (Cyclic Redundancy Check) is used to verify that the provisioning key data\nhasn't been corrupted and can be used to identify the keys. CRC value is zero-padded to 2 bytes or 4 characters, and\nall a-f characters are in lowercase, e.g. 0xf14c.\n",
+            "pattern": "^0x[A-Fa-f0-9]{4}$",
+            "minLength": 6,
+            "maxLength": 6,
+            "example": "0xf14c",
+            "readOnly": true
+          }
+        },
+        "readOnly": true
+      },
+      "NodeProvisioningCsvMetadata": {
+        "type": "object",
+        "description": "Metadata characterizing the provisioning CSV file content.\nNotice that when this is passed on multipart requests this is a non-file field (without a filename) i.e. is a plain string.\n",
+        "properties": {
+          "md5Checksum": {
+            "type": "string",
+            "description": "MD5 checksum over the whole binary data content. The checksum information is used to first to make sure that server\nreceives the CSV file data without errors.\n"
+          }
+        },
+        "required": [
+          "md5Checksum"
+        ]
+      },
+      "NodeProvisioningImportResponse": {
+        "type": "object",
+        "properties": {
+          "importedCount": {
+            "type": "integer",
+            "description": "Number of CSV rows successfully imported",
+            "minimum": 0
+          },
+          "updatedCount": {
+            "type": "integer",
+            "description": "Number of existing node records updated",
+            "minimum": 0
+          },
+          "createdCount": {
+            "type": "integer",
+            "description": "Number of new node records created",
+            "minimum": 0
+          },
+          "errors": {
+            "type": "array",
+            "description": "List of validation errors encountered during import",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer",
+                  "description": "Row number where error occurred (CSV header is row 1)."
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Error description"
+                }
+              },
+              "required": [
+                "row",
+                "message"
+              ]
+            }
+          }
+        },
+        "required": [
+          "importedCount",
+          "updatedCount",
+          "createdCount",
+          "errors"
+        ]
+      },
+      "Coordinates": {
+        "type": "object",
+        "description": "A presentation of a coordinate point used to either denote a single location or alternatively\na point in a area, like bounding box.\n\n**NOTE:** In the current version, the coordinates are given in WGS84 coordinate system (EPSG:4326),\nbut for future compatibility, an option to support multiple coordinate systems is preserved.\n",
+        "properties": {
+          "latitude": {
+            "description": "Decimal presentation of the latitude (in given coordinate system)",
+            "type": "number",
+            "format": "double",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "description": "Decimal presentation of the longitude (in given coordinate system)",
+            "type": "number",
+            "format": "double",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "altitude": {
+            "description": "Altitude in meters above sea level",
+            "type": "number",
+            "format": "double"
+          },
+          "epsg": {
+            "$ref": "#/components/schemas/EpsgCode"
+          }
+        }
+      },
+      "EpsgCode": {
+        "description": "EPSG code of the coordinate system used to represent latitude and longitude. The available options are\nlimited to those supported by the services. Currently available EPSG codes are following:\n* `EPSG:4326`: WGS84 (default)\n",
+        "type": "string",
+        "enum": [
+          "EPSG:4326"
+        ],
+        "readOnly": true
+      },
+      "RelatedObjectReference": {
+        "description": "*DEPRECATION NOTICE: References will be removed, since there is no use for them anymore in the current tool version.*\n\nReference to a resource that is related to the current resource\n",
+        "type": "object",
+        "properties": {
+          "relation": {
+            "description": "Type or nature of the relation (usage depends on the context)",
+            "type": "string",
+            "readOnly": true
+          },
+          "href": {
+            "description": "Link to access the related resource",
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "deprecated": true,
+        "readOnly": true
+      },
+      "PagingParameterObject": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Number of items to return in a single response. If the total number of results matching the query / request\nthen the results are limited to the given amount. In that case, the service will provide cursors that allow\ntraversing between the pages.\n\n**NOTE:** It is highly recommended to use reasonable page sizes especially if connecting from a client\napplication. However, the maximum value for the limit is kept quite high in order to ease integration of\ncustomer backend services.\n",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 1000
+          },
+          "cursor": {
+            "description": "Cursor pointing to the next / first item to be returned",
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      },
+      "CommonSearchParameterObject": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "description": "Desired ordering of sorted results, either `asc` (ascending) or `desc` (descending)",
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
+          },
+          "fields": {
+            "description": "Desired selection of fields to be returned with results. Uuid and sortBy field are always selected by default.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalResultsCountOnly": {
+            "description": "If set to true, only total results count matching query, ignoring cursor is returned in metadata response.",
+            "type": "boolean"
+          }
+        }
+      },
+      "FreeFormObject": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Common error response resource sent in case of server error",
+        "properties": {
+          "errorCode": {
+            "$ref": "#/components/schemas/WirepasErrorCode"
+          },
+          "message": {
+            "description": "Short descriptive error message in English",
+            "type": "string"
+          },
+          "details": {
+            "allOf": [
+              {
+                "description": "More detailed information about the error if seen necessary. The information provided in the details\ndepends on the Wirepas error given in the errorCode (see more information from the error code\ndescriptions). If no details are available, then the details field is not given or is empty. The\ndetails field is encoded in JSON format. If the input was list type, then also the details field is\na list containing one or more items with error. With operations accessing a single resource, the\ndetails field contains only a single object (not an array). The possible fields in each of the item\nin the details are described per error code in the Wirepas error code descriptions.\n"
+              },
+              {
+                "$ref": "#/components/schemas/FreeFormObject"
+              }
+            ]
+          },
+          "serviceRef": {
+            "description": "Error reference identifier, which makes it possible locate related error message from server side logs.\nThis is mainly purposed for development time use, but can be benefit also when tracking production system\nproblems.\n",
+            "type": "object",
+            "properties": {
+              "serviceId": {
+                "description": "Identifier of the backend service instance being a source of the error",
+                "type": "string"
+              },
+              "errorRef": {
+                "description": "UUID type of reference to the error, which can be used to track error from server side",
+                "type": "string"
+              }
+            },
+            "required": [
+              "serviceId",
+              "errorRef"
+            ]
+          }
+        },
+        "required": [
+          "errorCode",
+          "message",
+          "serviceRef"
+        ]
+      },
+      "WirepasErrorCode": {
+        "description": "More detailed error codes describing the reason for failures. These error codes are specific\nto Wirepas backend services. The main objective of the error codes is to give more information\nrelated to the potential cause of an failure in operation. These can be then benefit e.g. when\ngiving error indications to actual end users, in internalization of error responses etc.\n\nThe error codes are mainly related to the scenarios, where server returns HTTP error 400 (Bad\nRequest) or 500 (Internal Server Error). However, an Wirepas error code might be included also in\nother errors, but the added information in these cases might be quite minimal.\n\nThe Wirepas error codes can be categorized to following groups:\n* **Client data errors**: Error codes describing the erroneous data provided by the client\n* **Client request errors**: Other client request related error codes\n* **System error codes**: Error codes giving some background on potential system level problems\n\nIn some of the cases, the details field may contain more information about the error. The details\nfield is encoded in JSON format. The contents do not have standard format, thus parsing it is not\nrecommended. Instead, it is purposed mainly for development time and debug purposes for providing\nmore insights to the actual cause of the error.\n\nThe actual error codes are listed below per category.\n\n**Client data errors**:\n* `WERR_UNKNOWN_RESOURCE`: Identified request object(s) are not found from the system. Details field\n  in the response may identify the unknown resources.\n* `WERR_UNKNOWN_FIELD`: Request object(s) contain unknown fields. Details field in the response may\n  identify the unknown resources.\n* `WERR_INVALID_FIELD_VALUE`: Values of field(s) in the request is not acceptable. Details may contain\n  information identifying the resources and fields involved.\n* `WERR_INVALID_IDENTIFIER`: The value given for the identifier field in an object is invalid. This does not\n  refer to the UUID of the object but the real world identifiers (such as network or node addresses). Details\n  field may contain additional information about the error.\n* `WERR_DUPLICATE_IDENTIFIER`: The identifier for an object is already allocated and therefore does not meet\n  the unique constraint. This does not refer to the UUID of the object but the real world identifiers (such\n  as network and node addresses). Details field may contain additional information about the error.\n* `WERR_INVALID_REFERENCE`: The reference object identifier given in the request is invalid or cannot be\n  found. Details may contain more information about erroneous objects and references.\n* `WERR_RESOURCE_IN_USE`: The resource being deleted is in use or referenced by another object so that it\n  cannot be deleted before it is freed or references removed.\n\n**Client request errors**:\n* `WERR_API_VALIDATION`: The request does not meet the requirements and constraints defined by the API\n  specification. Typical causes are e.g. malformed content, missing required fields, incorrect types or enum\n  fields, or illegal values not meeting the given (e.g. min/max) constraints.\n* `WERR_INVALID_CREDENTIALS`: The credentials provided with the client request are not available or invalid.\n* `WERR_ACCESS_NOT_ALLOWED_OPERATION`: The client does not have enough rights to perform the requested operation.\n* `WERR_ACCESS_NOT_ALLOWED_DATA`: The client does not have rights to access the requested resource.\n* `WERR_INVALID_PARAMETERS`: The URL parameters given for the request are invalid. The details may contain\n  a list of invalid parameters (InvalidParams).\n* `WERR_INVALID_HEADERS`: The header fields in request are invalid, contain invalid values, etc. The details\n  may contain a list of invalid parameters (InvalidParams).\n* `WERR_INVALID_CONTENT`: The content body of the request has invalid format / encoding.\n* `WERR_CONTENT_TOO_LARGE`: The provided content body is too large for the service to handle.\n* `WERR_MISSING_CONTENT`: The content is missing for a request that expects to have content.\n* `WERR_INVALID_QUERY`: The query filter given as a parameter for GET or advanced search request has invalid\n  syntax or contain invalid fields. Details may contain a list of invalid fields (errorFields).\n* `WERR_INVALID_QUERY_PARAMETERS`: Some of the other parameters for the search query (limit, sortBy, order,\n  or cursor) is incorrect or mismatches against other fields (e.g. cursor not matching the current parameters).\n* `WERR_INVALID_STATE`: The requested state change operation of an object is not allowed given the current\n  state of the target resource.\n* `WERR_STATE_CHANGE_NOT_ALLOWED`: The requested state change operation was not allowed (see message for further details).\n* `WERR_FAILED_RESOURCES`: The requested operation failed because there are or were failed resources or operations that\n  need to be managed before continuing.\n* `WERR_OVERLAPPING_OPERATION`: The requested operation failed, since there is an overlapping operation preventing the\n  requested operation.\n* `WERR_PRECONDITION_ERROR`: The requested operation failed because needed preconditions were not met.\n  The error cannot be bypassed with the force flag, instead the fulfilling of the preconditions must be waited on.\n* `WERR_PRECONDITION_VALIDATION`: The requested operation failed because needed preconditions were not met,\n  but the error can be bypassed using the force flag.\n\n**System error codes**:\n* `WERR_DATABASE_ERROR`: The requested operation failed due to a database connection or request failure. See\n  more details on the backend system logs.\n* `WERR_MESSAGING_ERROR`: The requested operation failed due to an internal messaging error at the backend. See\n  more details on the backend system logs.\n* `WERR_OPERATION_TIMEOUT`: The requested operation failed due to an internal operation timeout. See more\n  details on the backend system logs.\n* `WERR_GENERAL_ERROR`: The requested operation failed due to an unknown internal error at the backend. See\n  more details on the backend system logs.\n",
+        "type": "string",
+        "enum": [
+          "WERR_UNKNOWN_RESOURCE",
+          "WERR_UNKNOWN_FIELD",
+          "WERR_INVALID_FIELD_VALUE",
+          "WERR_INVALID_IDENTIFIER",
+          "WERR_DUPLICATE_IDENTIFIER",
+          "WERR_INVALID_REFERENCE",
+          "WERR_RESOURCE_IN_USE",
+          "WERR_API_VALIDATION",
+          "WERR_INVALID_CREDENTIALS",
+          "WERR_ACCESS_NOT_ALLOWED_OPERATION",
+          "WERR_ACCESS_NOT_ALLOWED_DATA",
+          "WERR_INVALID_PARAMETERS",
+          "WERR_INVALID_HEADERS",
+          "WERR_INVALID_CONTENT",
+          "WERR_CONTENT_TOO_LARGE",
+          "WERR_MISSING_CONTENT",
+          "WERR_INVALID_QUERY",
+          "WERR_INVALID_QUERY_PARAMETERS",
+          "WERR_INVALID_STATE",
+          "WERR_STATE_CHANGE_NOT_ALLOWED",
+          "WERR_FAILED_RESOURCES",
+          "WERR_OVERLAPPING_OPERATION",
+          "WERR_PRECONDITION_ERROR",
+          "WERR_PRECONDITION_VALIDATION",
+          "WERR_DATABASE_ERROR",
+          "WERR_MESSAGING_ERROR",
+          "WERR_OPERATION_TIMEOUT",
+          "WERR_GENERAL_ERROR"
+        ]
+      },
+      "ResponsePagingInformation": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "totalResultsCount": {
+                "description": "Total number of items matching the given query. This field is only available in the response\nwhen totalResultsCountOnly=true is given as a query parameter. Cursor values are not returned\nin the response.\n",
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/SimpleResponsePagingInformation"
+          }
+        ]
+      },
+      "DeleteListResponse": {
+        "type": "object",
+        "description": "List of deleted items and metadata related to the delete operation",
+        "properties": {
+          "deletedItems": {
+            "type": "array",
+            "description": "The list of UUIDs identifying the items that were deleted.",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Metadata about the delete operation",
+            "properties": {
+              "deletedCount": {
+                "description": "Number of items deleted with this operation",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "deletedCount"
+            ]
+          }
+        },
+        "required": [
+          "deletedItems",
+          "metadata"
+        ]
+      },
+      "SimpleResponsePagingInformation": {
+        "type": "object",
+        "properties": {
+          "resultsCount": {
+            "description": "The number of items returned in the result list.",
+            "type": "integer"
+          },
+          "nextCursor": {
+            "description": "A cursor pointing to the \"next\" data set, i.e. this should be given as a cursor parameter\nin the following request to get the following page in results. This is empty, if there is no\nfollowing page.\n",
+            "type": "string",
+            "format": "byte"
+          },
+          "prevCursor": {
+            "description": "A cursor pointing to the \"previous\" data set, thus when traversing backwards within the result\nset, this should be given as a cursor parameter in the following request. When this is empty,\nthere is no previous page.\n",
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Error caused by invalid client request. Potential causes are malformed request, invalid data\nfields, potential conflicts in data, etc.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "unknownResourceListErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_RESOURCE",
+                  "message": "Resource not found from service",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "71142ad3-631b-4b66-9b6e-214bd9ab1101"
+                  }
+                }
+              },
+              "unknownFieldSingleErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_FIELD",
+                  "message": "Unknown field in request",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "1d9b547d-efd1-4c44-a33c-9d954e0b5051"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Client did not provide required credentials with the request and is thus not unauthorized perform\nthe request. Client may attempt the operation again after authenticating.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notAllowedErrorExample": {
+                "value": {
+                  "errorCode": "WERR_INVALID_CREDENTIALS",
+                  "message": "None or invalid credentials provided in the request.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "4d81a884-022f-49d1-9475-03a6b5d7a86b"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Client is not authorized to complete the request. The permissions granted to the client during the\nauthentication do not allow either performing the requested operation (e.g. POST) or access the\nrequested resource object.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notAllowedErrorExample": {
+                "value": {
+                  "errorCode": "WERR_ACCESS_NOT_ALLOWED_OPERATION",
+                  "message": "Not enough privileges to perform requested operation",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "c9dc4b26-6f6a-4977-850c-8d3e5695c51b"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Requested resource is not found from the server. This can be caused either by invalid URL or by the fact\nthat the resource identified by the UUID is not anymore found from the server.\n\nThis response may not contain additional error response content.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notFoundErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_RESOURCE",
+                  "message": "Resource not found from service",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "49b5af2b-222e-4444-886a-9d11aaaeeeff"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Error caused by client request that is conflicting with the current server state. This error can be caused e.g.\nby an attempt to modify a non-changeable identifier field, a delete request to an object that is referenced by\nanother object with as a mandatory requirement, or an invalid state transition request.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "conflictIdentifierErrorExample": {
+                "value": {
+                  "errorCode": "WERR_INVALID_IDENTIFIER",
+                  "message": "Identifier cannot be changed once set.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "00903f91-beaa-4a3f-a666-b043c59b2f31"
+                  }
+                }
+              },
+              "conflictInUseErrorExample": {
+                "value": {
+                  "errorCode": "WERR_RESOURCE_IN_USE",
+                  "message": "Resource is in use.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "70494050-5715-4454-9a11-1501d9d227c1"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error occurred during the processing of the request. In general, this is caused by some\nunexpected system error (e.g. unavailability of system resources, database problems, etc.).\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "timeoutErrorExample": {
+                "value": {
+                  "errorCode": "WERR_OPERATION_TIMEOUT",
+                  "message": "Requested operation timed out",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "507b535f-5acd-41f9-80d8-eee1258d6cf6"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DefaultErrorResponse": {
+        "description": "Unexpected error when handling the request. More details about the potential reason of the error are\ngiven by the HTTP error code. See e.g. https://developer.mozilla.org/en-US/docs/Web/HTTP/Status for list\nof all HTTP error codes.\n\nThe response may not contain additional error response content in the message body.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "examples": {
+      "getNodesExample": {
+        "value": {
+          "results": [
+            {
+              "uuid": "2f429250-25d1-11ec-9621-0242ac130002",
+              "address": 19216800,
+              "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+              "name": "Simple Node",
+              "modificationTime": 1637679400
+            },
+            {
+              "uuid": "465639a8-70f0-4a4c-a312-eeb28efded30",
+              "address": 19216810,
+              "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+              "name": "Simple Tag",
+              "modificationTime": 1637679408
+            },
+            {
+              "uuid": "a83c076c-8233-4498-b53e-0f0fdc8af83f",
+              "address": 19216814,
+              "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+              "name": "Another Tag",
+              "modificationTime": 1637679412
+            },
+            {
+              "uuid": "45c134dc-3eac-44e1-b84e-fb182c2aa877",
+              "address": 123456789,
+              "name": "Example Node",
+              "description": "Node example description for example node.",
+              "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+              "isVirtual": false,
+              "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+              "coordinates": {
+                "latitude": 61.4464195,
+                "longitude": 23.8623745,
+                "altitude": 160
+              },
+              "serviceRefs": {
+                "tracking": {
+                  "relation": "tracking-metadata",
+                  "href": "tracking/nodes/d913d657-0d1c-4bdc-a7a7-133c30495392"
+                }
+              },
+              "provisioningInfo": {
+                "nodeUid": "22047a15-6893-4796-8ba3-3f93afe592f5",
+                "isKeysPopulated": true,
+                "keysCRC": "0xf14c"
+              },
+              "modificationTime": 1637679405
+            },
+            {
+              "uuid": "be5d0bf5-7218-43d9-9d21-a61c2a615996",
+              "address": 111,
+              "name": "Example sink",
+              "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+              "isVirtual": false,
+              "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+              "coordinates": {
+                "latitude": 61.446521,
+                "longitude": 23.862376,
+                "altitude": 160
+              },
+              "sinkNodeInfo": {
+                "sinkGatewayUuid": "e923fca1-f542-4a91-af4c-a1b301792add"
+              },
+              "modificationTime": 1637679507
+            },
+            {
+              "uuid": "af1168ea-5a3b-4814-9a02-f107be9ff244",
+              "address": 121,
+              "name": "Another sink",
+              "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+              "isVirtual": false,
+              "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+              "coordinates": {
+                "latitude": 61.446483,
+                "longitude": 23.8622965,
+                "altitude": 160
+              },
+              "sinkNodeInfo": {
+                "sinkGatewayUuid": "fe0170b5-df6e-4af4-aa3c-4b2a072bbe60"
+              },
+              "modificationTime": 1637679507
+            },
+            {
+              "uuid": "b6862f56-0e08-4f37-b254-f4a5064201c8",
+              "address": 123456789,
+              "name": "Sink node with full data",
+              "description": "Description for sink node",
+              "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+              "isVirtual": false,
+              "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+              "coordinates": {
+                "latitude": 61.4464195,
+                "longitude": 23.8623745,
+                "altitude": 160
+              },
+              "serviceRefs": {
+                "tracking": {
+                  "relation": "tracking-metadata",
+                  "href": "tracking/nodes/d913d657-0d1c-4bdc-a7a7-133c30495392"
+                },
+                "provisioning": {
+                  "relation": "provisioning-metadata",
+                  "href": "provisioning/nodes/b74f91a7-2656-42e1-ae2d-6fbf367e5f89"
+                }
+              },
+              "sinkNodeInfo": {
+                "sinkGatewayUuid": "d421b336-79c4-498a-b71a-52bb535c34ae"
+              },
+              "custom": {
+                "extSystemId": "sink-123456789-1"
+              },
+              "modificationTime": 1637679405
+            }
+          ],
+          "metadata": {
+            "resultsCount": 7
+          }
+        }
+      },
+      "newNodeListExample": {
+        "value": [
+          {
+            "address": 123456789,
+            "name": "Example Node",
+            "description": "Node example description for example node.",
+            "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+            "coordinates": {
+              "latitude": 61.4464195,
+              "longitude": 23.8623745,
+              "altitude": 160
+            }
+          },
+          {
+            "address": 19216800,
+            "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "name": "Simple Node"
+          },
+          {
+            "address": 12121212,
+            "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "name": "Basic Node",
+            "coordinates": {
+              "latitude": 61.4463987,
+              "longitude": 23.8623763,
+              "altitude": 160
+            }
+          }
+        ]
+      },
+      "nodeListExample": {
+        "value": [
+          {
+            "uuid": "2f429250-25d1-11ec-9621-0242ac130002",
+            "address": 19216800,
+            "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "name": "Simple Node",
+            "modificationTime": 1637679400
+          },
+          {
+            "uuid": "45c134dc-3eac-44e1-b84e-fb182c2aa877",
+            "address": 123456789,
+            "name": "Example Node",
+            "description": "Node example description for example node.",
+            "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "isVirtual": false,
+            "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+            "coordinates": {
+              "latitude": 61.4464195,
+              "longitude": 23.8623745,
+              "altitude": 160
+            },
+            "serviceRefs": {
+              "tracking": {
+                "relation": "tracking-metadata",
+                "href": "tracking/nodes/d913d657-0d1c-4bdc-a7a7-133c30495392"
+              }
+            },
+            "provisioningInfo": {
+              "nodeUid": "22047a15-6893-4796-8ba3-3f93afe592f5",
+              "isKeysPopulated": true,
+              "keysCRC": "0xf14c"
+            },
+            "modificationTime": 1637679405
+          },
+          {
+            "uuid": "18aaacfe-e1b2-483b-a9b8-a74ce0fe44fa",
+            "address": 12121212,
+            "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "name": "Basic Node",
+            "isVirtual": false,
+            "coordinates": {
+              "latitude": 61.4463987,
+              "longitude": 23.8623763,
+              "altitude": 160
+            },
+            "serviceRefs": {
+              "tracking": {
+                "relation": "tracking-metadata",
+                "href": "tracking/nodes/bc01d024-f252-42a9-ae1e-e581971345c0"
+              }
+            },
+            "modificationTime": 1637679408
+          },
+          {
+            "uuid": "b6862f56-0e08-4f37-b254-f4a5064201c8",
+            "address": 123456789,
+            "name": "Sink node with full data",
+            "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "isVirtual": false,
+            "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+            "coordinates": {
+              "latitude": 61.4464195,
+              "longitude": 23.8623745,
+              "altitude": 160
+            },
+            "serviceRefs": {
+              "tracking": {
+                "relation": "tracking-metadata",
+                "href": "tracking/nodes/d913d657-0d1c-4bdc-a7a7-133c30495392"
+              },
+              "provisioning": {
+                "relation": "provisioning-metadata",
+                "href": "provisioning/nodes/b74f91a7-2656-42e1-ae2d-6fbf367e5f89"
+              }
+            },
+            "sinkNodeInfo": {
+              "sinkGatewayUuid": "d421b336-79c4-498a-b71a-52bb535c34ae"
+            },
+            "modificationTime": 1637679405
+          }
+        ]
+      },
+      "deleteNodeListResponseExample": {
+        "value": {
+          "deletedItems": [
+            "2f429250-25d1-11ec-9621-0242ac130002"
+          ],
+          "metadata": {
+            "deletedCount": 1
+          }
+        }
+      },
+      "updateNodeListExample": {
+        "value": [
+          {
+            "uuid": "2f429250-25d1-11ec-9621-0242ac130002",
+            "name": "Updated Node",
+            "coordinates": {
+              "latitude": 61.4464308,
+              "longitude": 23.8832478,
+              "altitude": 150
+            }
+          }
+        ]
+      },
+      "updatedNodeListExample": {
+        "value": [
+          {
+            "uuid": "2f429250-25d1-11ec-9621-0242ac130002",
+            "address": 19216800,
+            "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+            "name": "Updated Node",
+            "coordinates": {
+              "latitude": 61.4464308,
+              "longitude": 23.8832478,
+              "altitude": 150
+            },
+            "modificationTime": 1637679672
+          }
+        ]
+      },
+      "searchNodesExample": {
+        "value": {
+          "limit": 100,
+          "cursor": "Zj1uYW1lO25leHRVdWlkPTJmNDI5MjUwLTI1ZDEtMTFlYy05NjIxLTAyNDJhYzEzMDAwMgo=",
+          "sortBy": "name",
+          "order": "asc",
+          "query": "networkUuid==eb5ca0fd-32eb-4646-bc53-21c19d185848;modificationTime=gt=1637670000;uuid=in=(2f429250-25d1-11ec-9621-0242ac130002,b6862f56-0e08-4f37-b254-f4a5064201c8)",
+          "fields": [
+            "uuid",
+            "name"
+          ]
+        }
+      },
+      "simpleNodeExample": {
+        "value": {
+          "uuid": "2f429250-25d1-11ec-9621-0242ac130002",
+          "address": 19216800,
+          "name": "Simple Node",
+          "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+          "modificationTime": 1637679400
+        }
+      },
+      "fullNodeExample": {
+        "value": {
+          "uuid": "b6862f56-0e08-4f37-b254-f4a5064201c8",
+          "address": 123456789,
+          "name": "Sink node with full data",
+          "description": "Description for sink node",
+          "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+          "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+          "coordinates": {
+            "latitude": 61.4464195,
+            "longitude": 23.8623745,
+            "altitude": 160
+          },
+          "serviceRefs": {
+            "tracking": {
+              "relation": "tracking-metadata",
+              "href": "tracking/nodes/d913d657-0d1c-4bdc-a7a7-133c30495392"
+            },
+            "provisioning": {
+              "relation": "provisioning-metadata",
+              "href": "provisioning/nodes/b74f91a7-2656-42e1-ae2d-6fbf367e5f89"
+            }
+          },
+          "sinkNodeInfo": {
+            "sinkGatewayUuid": "d421b336-79c4-498a-b71a-52bb535c34ae"
+          },
+          "custom": {
+            "extSystemId": "sink-123456789-1"
+          },
+          "modificationTime": 1637679405
+        }
+      },
+      "updateNodeExample": {
+        "value": {
+          "address": 123456789,
+          "name": "Example Node",
+          "description": "An example node containing all the possible parameters",
+          "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+          "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+          "coordinates": {
+            "latitude": 61.4464195,
+            "longitude": 23.862375,
+            "altitude": 160
+          }
+        }
+      },
+      "patchUpdateNodeExample": {
+        "value": {
+          "name": "Patch updated sink",
+          "coordinates": {
+            "latitude": 61.4468212,
+            "longitude": 23.8623756,
+            "altitude": 160
+          }
+        }
+      },
+      "patchUpdatedNodeExample": {
+        "value": {
+          "uuid": "be5d0bf5-7218-43d9-9d21-a61c2a615996",
+          "address": 111,
+          "name": "Patch updated sink",
+          "networkUuid": "eb5ca0fd-32eb-4646-bc53-21c19d185848",
+          "isVirtual": false,
+          "locationUuid": "8a29a600-972c-4e64-8a3f-d3f5c9633b14",
+          "coordinates": {
+            "latitude": 61.4468212,
+            "longitude": 23.8623756,
+            "altitude": 160
+          },
+          "modificationTime": 1637680234
+        }
+      },
+      "importNodeProvisioningDataExample": {
+        "value": {
+          "provisioningCsvMetadata": {
+            "md5Checksum": "5a1093d4dae5e022fb43f72f69c95000"
+          },
+          "provisioningCsvData": "<BINARY_DATA>"
+        }
+      }
+    }
+  }
+}
