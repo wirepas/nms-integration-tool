@@ -1,0 +1,6 @@
+,name,description,custom_field1,custom_field2,address,network_address,lat,lon,alt,location_name,location_parent_name
+0,node 1,description node 1,custom_field1 1,custom_field2 1,1,1,45.82336682980463,5.481666990161637,7,Grenoble Building 1,Grenoble
+1,node 2,description node 2,custom_field1 2,custom_field2 2,2,1,45.78930500410694,5.656306217523735,9,Grenoble Building 2,Grenoble
+2,node 3,description node 3,custom_field1 3,custom_field2 3,3,1,46.00391721468354,4.994580122207899,8,Grenoble Building 1,Grenoble
+3,node 4,description node 4,custom_field1 4,custom_field2 4,4,1,46.141052070004136,5.689803772375676,2,Grenoble Building 2,Grenoble
+4,node 5,description node 5,custom_field1 5,custom_field2 5,5,1,45.94659548465344,5.498093423901272,7,Grenoble Building 1,Grenoble

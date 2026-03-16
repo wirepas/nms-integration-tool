@@ -1,0 +1,6 @@
+Id,custom_field1,custom_field2,custom_field3,lat,long,alt,Region Name,Municipality Name,Building Name,description
+0,411,63.462923277289114,m4,45.87826015248881,5.3163903653843825,1,Rhône-Alpes,Grenoble,Grenoble Building 1,It is Grenoble Building 1
+1,585,97.12851274465473,m2,46.23429477363489,4.853507434214929,5,Rhône-Alpes,Grenoble,Grenoble Building 2,It is Grenoble Building 2
+60,457,77.6568354639156,m2,46.072358655878475,5.6221202947207995,9,Rhône-Alpes,Lyon,Lyon Building 1,It it Lyon Building 1
+61,1149,61.97497413229867,m1,46.163604970732884,5.448584418574581,0,Rhône-Alpes,Lyon,Lyon Building 2,It it Lyon Building 2
+62,823,63.267454744528784,m5,45.782769400597914,5.694638722463942,9,Rhône-Alpes,Lyon,Lyon Building 3,It it Lyon Building 3

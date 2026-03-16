@@ -1,0 +1,25 @@
+{
+  "networkAddress": "networkid",
+  "address": "nodeid",
+  "name": "nodename",
+  "description": "nodedesc",
+  "coordinates": {
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "altitude": "altitude"
+  },
+  "custom": {
+    "legacy_is_anchor": "is_anchor",
+    "legacy_approved": "approved",
+    "legacy_virtual": "virtual",
+    "legacy_pixel_location_x": "pixel_location_x",
+    "legacy_pixel_location_y": "pixel_location_y",
+    "legacy_rssi_offset": "rssi_offset",
+    "legacy_update_time": "update_time",
+    "legacy_mapgroupid": "mapgroupid",
+    "legacy_mapgroupname": "mapgroupname",
+    "legacy_mapid": "mapid",
+    "legacy_mapname": "mapname",
+    "legacy_mapfloorindex": "mapfloorindex"
+  }
+}

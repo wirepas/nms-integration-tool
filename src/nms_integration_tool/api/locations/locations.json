@@ -1,0 +1,2426 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Wirepas locations metadata service API",
+    "description": "API for the Wirepas location metadata management service",
+    "version": "1.3.0",
+    "termsOfService": "https://www.wirepas.com",
+    "contact": {
+      "name": "Wirepas Support",
+      "url": "https://developer.wirepas.com/support/home",
+      "email": "support@wirepas.com"
+    },
+    "license": {
+      "name": "Wirepas license",
+      "url": "https://www.wirepas.com/licensing"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Location metadata service"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Location metadata",
+      "description": "Wirepas locations metadata management"
+    }
+  ],
+  "paths": {
+    "/metadata/locations": {
+      "get": {
+        "operationId": "getLocations",
+        "summary": "Get a list of locations",
+        "description": "Returns list of location resources. It is recommended that the client implements the get requests based\non the client defined \"typing\" (using the locationTypeUuid field). Furthermore, client shall sort and page\nthe results accordingly to avoid excess load on the service and communications media.\n\nThis endpoint supports simple queries with reasonable set of different filter parameters. In case of more\ncomplex queries, separate search endpoint shall be used.\n\nSee advanced search for supported query fields and pattern matching.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PagingQueryLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PagingQueryCursor"
+          },
+          {
+            "$ref": "#/components/parameters/QueryFilter"
+          },
+          {
+            "$ref": "#/components/parameters/SortingQueryOrder"
+          },
+          {
+            "$ref": "#/components/parameters/QuerySelection"
+          },
+          {
+            "$ref": "#/components/parameters/QueryTotalResults"
+          },
+          {
+            "name": "sortBy",
+            "description": "The field according to which the response data shall be sorted. By default, results are sorted by the \"name\" field.\n\n**NOTE:** Sequence numbering should be used for sorting only in scenarios, where other search parameters\nlimit the result set so that sequence numbers can be expected to be unique.\n",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of location objects.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "description": "Actual results, i.e. the list of locations matching the request parameters. Note that the list might not be full\nresult set but contain only a partial result set (more information in metadata)\n",
+                      "items": {
+                        "$ref": "#/components/schemas/Location"
+                      }
+                    },
+                    "metadata": {
+                      "$ref": "#/components/schemas/ResponsePagingInformation"
+                    }
+                  }
+                },
+                "examples": {
+                  "getSitesExample": {
+                    "$ref": "#/components/examples/getSitesExample"
+                  },
+                  "getBuildingsExample": {
+                    "$ref": "#/components/examples/getBuildingsExample"
+                  },
+                  "getFloorsExample": {
+                    "$ref": "#/components/examples/getFloorsExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createLocations",
+        "summary": "Create a new location or locations",
+        "description": "Create a new location object or a list of locations with provided parameters.",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.wr"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/LocationInfo"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "approxCoordinates": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/Coordinates"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "latitude",
+                                "longitude",
+                                "altitude"
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "locationTypeUuid"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "examples": {
+                "newLocationListExample": {
+                  "$ref": "#/components/examples/newLocationListExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "New location object(s) have been created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Location"
+                  }
+                },
+                "examples": {
+                  "locationListExample": {
+                    "$ref": "#/components/examples/locationListExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchLocations",
+        "summary": "Update one or multiple location objects",
+        "description": "Update the attributes of one or multiple location objects. The items in the list are all updated and the return value\nof the operation reflects the success of the whole operation. Thus, all items in the list are either updated as requested\nby the operation, or no changes are made in any of the items in case of an error. All the location objects identified in\nthe operation shall be found, otherwise the operation will fail.\n\nThe items may not be complete location objects, thus only those fields that are given are updated. It is not possible to remove\nan attribute from a location with this operation. If that kind of functionality is needed, an update operation (PUT) of a specific\nlocation object shall be used.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.wr"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Location"
+                }
+              },
+              "examples": {
+                "updateLocationListExample": {
+                  "$ref": "#/components/examples/updateLocationListExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Locations have been successfully updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Location"
+                  }
+                },
+                "examples": {
+                  "updatedLocationListExample": {
+                    "$ref": "#/components/examples/updatedLocationListExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLocations",
+        "summary": "Deletes one or multiple location object(s)",
+        "description": "Deletes one or multiple location objects based on the query filter attributes given as a parameters for the request. All\nlocation objects matching the given query are removed, thus caution should be exercised when using this operation. The\nreturn value reflects the success of the whole operation, thus either all location objects matching the query are removed\nor none is removed in case of an error.\n\nThe success of the operation is based on the requested target state, e.g. if the deletion is requested based on UUID\nof a location object, the operation for that location object is successful also in a case where the given location does\nnot exist (anymore).\n\nSee advanced search for supported query fields and pattern matching.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.del"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DeleteQueryFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Location objects matching the query are deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteListResponse"
+                },
+                "examples": {
+                  "deleteLocationListResponseExample": {
+                    "$ref": "#/components/examples/deleteLocationListResponseExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/locations/search": {
+      "post": {
+        "operationId": "searchLocations",
+        "summary": "Advanced search of location objects",
+        "description": "Search for location objects with complex query parameters and conditions. The filtering and search conditions are defined\nin the request body using RSQL / FIQL, see short description from here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nIt is worth pointing out that this operation does not change the server state nor it does not save the query.\nInstead, the operation is purposed solely for providing more freedom in the definition of complex search filter\nconditions in cases where the basic filtering with query parameters would end up to extremely long URLs.\n\nQueries are case-insensitive. Pattern matching is supported in the query: an asterisk sign ('*') can be used to match zero\nor more arbitrary characters. Plain asterisk query (e.g. `name==*`) can be used for excluding null items.\n\nIf your operator is one of following <, >, <= or >= and your comparison string is only digits you can use \"str(string)\" to ensure it\nis treated as a string e.g. name>=\"str(123)\". Nested fields can be accessed with a dot operator e.g. `approxCoordinates.latitude`.\n\nThe query rules shall use the property field names of the Location resource/object.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.rd"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PagingParameterObject"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CommonSearchParameterObject"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "sortBy": {
+                        "description": "The field according to which the response data shall be sorted. By default, results are sorted by the \"name\" field.",
+                        "type": "string",
+                        "default": "name"
+                      },
+                      "query": {
+                        "description": "More detailed search query for limiting the request to subset of locations based on the defined filters.\nThe syntax of the query is based on RSQL / FIQL, which is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nSee more details in operation description.\n",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "query"
+                    ]
+                  }
+                ]
+              },
+              "examples": {
+                "searchLocationsExample": {
+                  "$ref": "#/components/examples/searchLocationsExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A list of location objects matching the query given in the request body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "description": "Actual results, i.e. the list of location objects matching the query given in the request body. Note that the list\nmight not be full result set but contain only a partial result set (more information in metadata)\n",
+                      "items": {
+                        "$ref": "#/components/schemas/Location"
+                      }
+                    },
+                    "metadata": {
+                      "$ref": "#/components/schemas/ResponsePagingInformation"
+                    }
+                  }
+                },
+                "examples": {
+                  "getSitesExample": {
+                    "$ref": "#/components/examples/getSitesExample"
+                  },
+                  "getBuildingsExample": {
+                    "$ref": "#/components/examples/getBuildingsExample"
+                  },
+                  "getFloorsExample": {
+                    "$ref": "#/components/examples/getFloorsExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/locations/{locationUuid}": {
+      "get": {
+        "operationId": "getLocationByUuid",
+        "summary": "Obtain information about a location object",
+        "description": "Obtain information about a specific location object identified by the UUID",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "locationUuid",
+            "description": "UUID identifying the location object the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned information of the requested location object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Location"
+                },
+                "examples": {
+                  "simpleSiteExample": {
+                    "$ref": "#/components/examples/simpleSiteExample"
+                  },
+                  "simpleBuildingExample": {
+                    "$ref": "#/components/examples/simpleBuildingExample"
+                  },
+                  "simpleFloorExample": {
+                    "$ref": "#/components/examples/simpleFloorExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateLocation",
+        "summary": "Update the location object",
+        "description": "Update a specific location identified by UUID with a provided object (complete object)",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "locationUuid",
+            "description": "UUID identifying the location object the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/LocationInfo"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "approxCoordinates": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Coordinates"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "latitude",
+                              "longitude",
+                              "altitude"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "locationTypeUuid"
+                    ]
+                  }
+                ]
+              },
+              "examples": {
+                "updateBuildingExample": {
+                  "$ref": "#/components/examples/updateBuildingExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location object updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Location"
+                },
+                "examples": {
+                  "updatedBuildingExample": {
+                    "$ref": "#/components/examples/updatedBuildingExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchLocation",
+        "summary": "Partially/patch update the location object",
+        "description": "Update the given fields in a specific location object identified by UUID.\n\n**NOTE:** The item given in the body may not be a complete location object, thus only those fields that are given are updated.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "locationUuid",
+            "description": "UUID identifying the location object the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationInfo"
+              },
+              "examples": {
+                "patchUpdateLocationExample": {
+                  "$ref": "#/components/examples/patchUpdateLocationExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Location"
+                },
+                "examples": {
+                  "patchUpdatedLocationExample": {
+                    "$ref": "#/components/examples/patchUpdatedLocationExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLocation",
+        "summary": "Delete the location object",
+        "description": "Delete the location object identified by the UUID. Removes the given location from managed objects.",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loc.del"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "locationUuid",
+            "description": "UUID identifying the location object the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Location object deleted successfully or already deleted."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/locations/types": {
+      "get": {
+        "operationId": "getLocationTypes",
+        "summary": "Get a list of location types",
+        "description": "Returns list of location types. It is expected that the number of location types is rather limited, thus paging and\nsorting of the results is not supported. Filtering of the results is according to different attributes is supported.\nThe filtering conditions are defined in the query parameter using RSQL / FIQL, see more details from query filter\ndescription.\n\nQueries are case-insensitive. Pattern matching is supported in the query: an asterisk sign ('*') can be used to match zero\nor more arbitrary characters. Plain asterisk query (e.g. `name==*`) can be used for excluding null items.\n\nIf your operator is one of following <, >, <= or >= and your comparison string is only digits you can use \"str(string)\" to ensure\nit is treated as a string e.g. name>=\"str(123)\".\n\nThe query rules shall use the property field names of the location type resource.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loctype.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/QueryFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of location type objects.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LocationType"
+                  }
+                },
+                "examples": {
+                  "getStateAreaLocationTypesExample": {
+                    "$ref": "#/components/examples/getStateAreaLocationTypesExample"
+                  },
+                  "getTrackingLocationTypesExample": {
+                    "$ref": "#/components/examples/getTrackingLocationTypesExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createLocationTypes",
+        "summary": "Create a new location type or types",
+        "description": "Create a new location type object or a list of location types with provided parameters.",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loctype.wr"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/LocationTypeInfo"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "examples": {
+                "newLocationTypeListExample": {
+                  "$ref": "#/components/examples/newLocationTypeListExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "New location type object(s) have been created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LocationType"
+                  }
+                },
+                "examples": {
+                  "locationListExample": {
+                    "$ref": "#/components/examples/locationTypeListExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLocationTypes",
+        "summary": "Deletes one or multiple location type object(s)",
+        "description": "Deletes one or multiple location type objects based on the query filter attributes given as a parameters for the request.\nAll location type objects matching the given query are removed, thus caution should be exercised when using this operation.\nThe return value reflects the success of the whole operation, thus either all location type objects matching the query are\nremoved or none is removed in case of an error.\n\nThe success of the operation is based on the requested target state, e.g. if the deletion is requested based on UUID of a\nlocation type object, the operation for that type is successful also in a case where the given location type does not exist\n(anymore).\n\n**NOTE:** A location type cannot be deleted, if it is assigned to some location object. Thus, in order to remove a location\ntype, locations with that type needs to be first updated with a new type.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loctype.del"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DeleteQueryFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Location type objects matching the query are deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteListResponse"
+                },
+                "examples": {
+                  "deleteLocationTypeListResponseExample": {
+                    "$ref": "#/components/examples/deleteLocationTypeListResponseExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    },
+    "/metadata/locations/types/{locationTypeUuid}": {
+      "get": {
+        "operationId": "getLocationTypeByUuid",
+        "summary": "Obtain information about a location type object",
+        "description": "Obtain information about a specific location type object identified by the UUID",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loctype.rd"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "locationTypeUuid",
+            "description": "UUID identifying the location type object the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned information of the requested location type object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationType"
+                },
+                "examples": {
+                  "locationTypeCityExample": {
+                    "$ref": "#/components/examples/locationTypeCityExample"
+                  },
+                  "locationTypeBuildingExample": {
+                    "$ref": "#/components/examples/locationTypeBuildingExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateLocationType",
+        "summary": "Update the location type object",
+        "description": "Update a specific location type identified by UUID with a provided object (complete object)\n\n**NOTE:** Changing the parent hierarchy is not allowed, if the location type is assigned to any location. This restriction\nis to prevent incorrect parent references between the actual location objects.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loctype.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "locationTypeUuid",
+            "description": "UUID identifying the location type object the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/LocationTypeInfo"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "name"
+                    ]
+                  }
+                ]
+              },
+              "examples": {
+                "updateLocationTypeExample": {
+                  "$ref": "#/components/examples/updateLocationTypeExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location type object updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationType"
+                },
+                "examples": {
+                  "updatedLocationTypeExample": {
+                    "$ref": "#/components/examples/updatedLocationTypeExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchLocationType",
+        "summary": "Partially/patch update the location type object",
+        "description": "Update the given fields in a specific location type object identified by UUID. It is worth noting, that the item given in\nthe body may not be a complete location object, thus only those fields that are given are updated.\n\n**NOTE:** Changing the parent hierarchy is not allowed, if the location type is assigned to any location. This restriction\nis to prevent incorrect parent references between the actual location objects.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loctype.wr"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "locationTypeUuid",
+            "description": "UUID identifying the location type object the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationTypeInfo"
+              },
+              "examples": {
+                "patchUpdateLocationTypeExample": {
+                  "$ref": "#/components/examples/patchUpdateLocationTypeExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location type updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationType"
+                },
+                "examples": {
+                  "updatedLocationTypeExample": {
+                    "$ref": "#/components/examples/updatedLocationTypeExample"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLocationType",
+        "summary": "Delete the location type object",
+        "description": "Delete the location type object identified by the UUID.\n\n**NOTE:** A location type cannot be deleted, if it is assigned to some location object. Thus, in order to remove a location\ntype, locations with that type needs to be first updated with a new type.\n",
+        "tags": [
+          "Location metadata"
+        ],
+        "security": [
+          {
+            "WirepasAuth": [
+              "wnms.loctype.del"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "locationTypeUuid",
+            "description": "UUID identifying the location type object the operation is targeted to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Location type object deleted successfully or already deleted."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DefaultErrorResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "WirepasAuth": {
+        "type": "openIdConnect",
+        "openIdConnectUrl": "/auth/realms/wnms/.well-known/openid-configuration"
+      }
+    },
+    "parameters": {
+      "PagingQueryLimit": {
+        "name": "limit",
+        "description": "Number of items to return in a single response. If the total number of results matching the query / request\nthen the results are limited to the given amount. In that case, the service will provide cursors that allow\ntraversing between the pages.\n\n**NOTE:** It is highly recommended to use reasonable page sizes especially if connecting from a client\napplication. However, the maximum value for the limit is kept quite high in order to ease integration of\ncustomer backend services.\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20000,
+          "default": 1000
+        }
+      },
+      "PagingQueryCursor": {
+        "name": "cursor",
+        "description": "Cursor pointing to the next / first item to be returned",
+        "style": "form",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "QueryFilter": {
+        "name": "query",
+        "description": "More detailed search query for limiting the request to subset of nodes based on the defined filters.\nThe syntax of the query is based on RSQL / FIQL, which is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nNote that the maximum length of the query string in the parameters is limited. If more advanced search parameters are\nrequired, use the dedicated search endpoint if available.\n\nQueries are case-insensitive. Pattern matching is supported in the query filter: an asterisk sign ('*') can be used to match\nzero or more arbitrary characters. Plain asterisk query (e.g. `name==*`) can be used for excluding null items.\n\nIf your operator is one of following <, >, <= or >= and your comparison string is only digits you can use \"str(string)\" to ensure it is treated as a string e.g. name>=\"str(123)\".\nNested fields can be accessed with a dot operator: `parent.children`\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 4096
+        },
+        "examples": {
+          "simple": {
+            "value": "modificationTime=ge=1"
+          },
+          "network": {
+            "value": "networkUuid==eb5ca0fd-32eb-4646-bc53-21c19d185848"
+          },
+          "wildcard": {
+            "value": "name==Wildcar*;description==*ldcards"
+          },
+          "array": {
+            "value": "uuid=in=(2f429250-25d1-11ec-9621-0242ac130002,b6862f56-0e08-4f37-b254-f4a5064201c8)"
+          },
+          "multiple": {
+            "value": "networkUuid==eb5ca0fd-32eb-4646-bc53-21c19d185848;modificationTime=gt=1637670000"
+          }
+        }
+      },
+      "DeleteQueryFilter": {
+        "name": "query",
+        "description": "Detailed query for limiting the delete request to a subset of nodes based on the defined filters. The syntax of the query is\nbased on RSQL / FIQL similarly to search queries. RSQL is shortly described in here:\n[https://github.com/jirutka/rsql-parser#grammar-and-semantic](https://github.com/jirutka/rsql-parser#grammar-and-semantic)\n\nExplicit query filter is required parameter for the delete queries. Thus, performing a delete operation for multiple resources\nat a time is not allowed without the query limiting the targeted entities. Wildcards etc. are allowed to target a larger set\nof nodes.\n\nSee search query for more detailed description of the syntax and supported fields.\n",
+        "in": "query",
+        "required": true,
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 4096
+        },
+        "examples": {
+          "wildcard": {
+            "value": "name==Wildcar*"
+          },
+          "array": {
+            "value": "uuid=in=(2f429250-25d1-11ec-9621-0242ac130002,b6862f56-0e08-4f37-b254-f4a5064201c8)"
+          }
+        }
+      },
+      "SortingQueryOrder": {
+        "name": "order",
+        "description": "Desired ordering of sorted results, either `asc` (ascending) or `desc` (descending). By default, results are sorted in\nascending order (`asc`).\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "default": "asc"
+        }
+      },
+      "QuerySelection": {
+        "name": "fields",
+        "description": "Desired selection of fields to be returned with results. Uuid and sortBy field are always selected by default.",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "QueryTotalResults": {
+        "name": "totalResultsCountOnly",
+        "description": "When this parameter is given and set to `true`, the query response contains only the metadata part with the `totalResultsCount` field giving the count of objects matching\nthe query filter in the request. When this parameter is given, `cursor` and `fields` parameters are not allowed. Other parameters (like `limit`) are ignored.\n",
+        "in": "query",
+        "style": "form",
+        "schema": {
+          "type": "boolean"
+        }
+      }
+    },
+    "schemas": {
+      "BaseObject": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "description": "Globally unique ID (UUID) used for identifying the API resource",
+            "type": "string",
+            "format": "uuid"
+          },
+          "modificationTime": {
+            "description": "Epoch timestamp for the last modification time of the object",
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "uuid"
+        ]
+      },
+      "MetadataBaseObject": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Short descriptive name for the metadata resource. If not explicitly set, the system will generate the\nname based on the low level identifier of the resource.\n",
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "description": "More versatile description of the metadata resource. This is optional information, i.e. there is no\ndefault content for this field.\n",
+            "type": "string"
+          },
+          "custom": {
+            "description": "A freeform dictionary that clients can utilize for storing their own metadata related to the managed resource.\nThe main intention of the custom fields is to allow clients to manage the relations between the client side data\nobjects and corresponding Wirepas NMS data object. Thus, client can e.g. add a custom field for storing the\ninternal identifier of managed asset to which the corresponding Wirepas node or gateway is linked to. Naturally,\nas the fields are fully customizable other usage purposes are possible.\n\nThe data management of the custom fields differ slightly from other fields or attributes in managed resources or\nobjects. The main difference is that the contents of `custom` field itself shall always be considered as single\nmanaged field. Thus, when adding new fields as well as when updating or removing existing fields to/from the `custom`,\nall the custom fields shall be given. I.e. the provided custom fields directly reflect the end state of the whole\n`custom` field after the operation. This is mainly relevant for PATCH update operations, which differ from other fields.\n",
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "Location": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/MetadataBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/LocationModel"
+          }
+        ]
+      },
+      "LocationInfo": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/LocationModel"
+          }
+        ]
+      },
+      "LocationModel": {
+        "type": "object",
+        "properties": {
+          "locationTypeUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Type of the location object. This is a UUID reference to location type object representing the type of this\nlocation object.\n"
+          },
+          "sequenceNumber": {
+            "type": "integer",
+            "description": "Optional indexing number for the location objects, which may be used by client to define the ordering of the\nthe given type of location objects under their parent relation.\n\nSimple examples for the ordering are e.g. numbered buildings within a specific site, like Building 1, Building 2\n(or Building A, Building B), etc. or for example floors within a building (Ground floor, 1st floor, 2nd floor, ...)\n\nFollowing should be noted related to the sequence numbering:\n* Sequence numbers under a parent reference should be unique, but it is on the responsibility of the client\n  to guarantee this.\n* Sequence numbers do not need to be consecutive but the usage is totally up to the client\n"
+          },
+          "approxCoordinates": {
+            "allOf": [
+              {
+                "description": "Approximated center coordinates of this location. This can be used to roughly tie the location to a real world\nposition in those cases where it is applicable (e.g. like with sites and buildings). Note that these coordinates\nare not used for any positioning related calculations, but instead they facilitate the mapping of this location\nobject, help in searching of different locations in an area, etc.\n"
+              },
+              {
+                "$ref": "#/components/schemas/Coordinates"
+              }
+            ]
+          },
+          "parentLocationUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An UUID reference to the parent location resource, to which this location is related to. The given parent shall follow\nthe hierarchy defined by the location type hierarchy.\n"
+          }
+        }
+      },
+      "LocationType": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/MetadataBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/LocationTypeModel"
+          }
+        ]
+      },
+      "LocationTypeInfo": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/LocationTypeModel"
+          }
+        ]
+      },
+      "LocationTypeModel": {
+        "description": "Location type enables the creation of typed hierarchy for the location objects. The types and therefore the\nlevels of hierarchy and their relations are not limited. Each type can have only one parent, thus making it\npossible to create tree like structures with one or more root types.\n\nThe purpose of the location types is to provide means to model real world concepts to the system. These can\nbe for example geospatial areas within a country, like states, districts and cities, or somewhat narrower\ncontext within a manufacturing facilities, like sites, buildings, warehouses, etc.\n\nFollowing gives a couple of concrete examples of different typings.\n\nSimple hierarchy with sequential order:\n\n```\nCOUNTRY -> STATE -> DISTRICT -> CITY\n```\n\nAn example of a tree type of hierarchy:\n\n```\nSITE -> BUILDING -> FLOOR\n     `> PARKING\n```\n\nAfter location types are defined, these can be then assigned to locations. When setting parent linkage to a\nsingle location, it is checked that it follows also the type hierarchy.\n",
+        "type": "object",
+        "properties": {
+          "parentTypeUuid": {
+            "description": "An UUID reference to the parent location location type for building the location type hierarchy. A location type\ncan have only one parent type, creating a tree like structure for location types. For root location type(s), this\nfield is empty.\n",
+            "type": "string",
+            "format": "uuid"
+          },
+          "geometryType": {
+            "$ref": "#/components/schemas/LocationGeometryType"
+          },
+          "isFilterType": {
+            "type": "boolean",
+            "description": "Flag indicating, that the locations of this type should be included in the location filtering.\n\nThe flag defaults to true.\n"
+          },
+          "isSequential": {
+            "type": "boolean",
+            "description": "Flag indicating, whether the locations of this type are such that they are ordered under their parent relation.\n\nThe flag defaults to false.\n\nSimple examples for the ordering are e.g. numbered buildings within a specific site, like Building 1, Building 2\n(or Building A, Building B), or for example floors within a building (Ground floor, 1st floor, 2nd floor, ...)\n"
+          }
+        }
+      },
+      "LocationGeometryType": {
+        "description": "Defines the type of the geospatial location (coordinates) definition for the location objects of this type. If set, all\nlocation objects created with this type shall allow only defining geometry of that type. Defaults to AREA_POLYGON.\n\nPossible geometry types are:\n\n- `CENTER_POINT`: Approximated central coordinate point of the location\n- `AREA_POLYGON`: Area boundaries defined as a polygon\n- `NONE`: Reserved for location types that do not have geospatial reference (like organizations etc.)\n",
+        "type": "string",
+        "enum": [
+          "CENTER_POINT",
+          "AREA_POLYGON",
+          "NONE"
+        ]
+      },
+      "Coordinates": {
+        "type": "object",
+        "description": "A presentation of a coordinate point used to either denote a single location or alternatively\na point in a area, like bounding box.\n\n**NOTE:** In the current version, the coordinates are given in WGS84 coordinate system (EPSG:4326),\nbut for future compatibility, an option to support multiple coordinate systems is preserved.\n",
+        "properties": {
+          "latitude": {
+            "description": "Decimal presentation of the latitude (in given coordinate system)",
+            "type": "number",
+            "format": "double",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "description": "Decimal presentation of the longitude (in given coordinate system)",
+            "type": "number",
+            "format": "double",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "altitude": {
+            "description": "Altitude in meters above sea level",
+            "type": "number",
+            "format": "double"
+          },
+          "epsg": {
+            "$ref": "#/components/schemas/EpsgCode"
+          }
+        }
+      },
+      "EpsgCode": {
+        "description": "EPSG code of the coordinate system used to represent latitude and longitude. The available options are\nlimited to those supported by the services. Currently available EPSG codes are following:\n* `EPSG:4326`: WGS84 (default)\n",
+        "type": "string",
+        "enum": [
+          "EPSG:4326"
+        ],
+        "readOnly": true
+      },
+      "PagingParameterObject": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Number of items to return in a single response. If the total number of results matching the query / request\nthen the results are limited to the given amount. In that case, the service will provide cursors that allow\ntraversing between the pages.\n\n**NOTE:** It is highly recommended to use reasonable page sizes especially if connecting from a client\napplication. However, the maximum value for the limit is kept quite high in order to ease integration of\ncustomer backend services.\n",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 1000
+          },
+          "cursor": {
+            "description": "Cursor pointing to the next / first item to be returned",
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      },
+      "CommonSearchParameterObject": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "description": "Desired ordering of sorted results, either `asc` (ascending) or `desc` (descending)",
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "default": "asc"
+          },
+          "fields": {
+            "description": "Desired selection of fields to be returned with results. Uuid and sortBy field are always selected by default.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalResultsCountOnly": {
+            "description": "If set to true, only total results count matching query, ignoring cursor is returned in metadata response.",
+            "type": "boolean"
+          }
+        }
+      },
+      "FreeFormObject": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Common error response resource sent in case of server error",
+        "properties": {
+          "errorCode": {
+            "$ref": "#/components/schemas/WirepasErrorCode"
+          },
+          "message": {
+            "description": "Short descriptive error message in English",
+            "type": "string"
+          },
+          "details": {
+            "allOf": [
+              {
+                "description": "More detailed information about the error if seen necessary. The information provided in the details\ndepends on the Wirepas error given in the errorCode (see more information from the error code\ndescriptions). If no details are available, then the details field is not given or is empty. The\ndetails field is encoded in JSON format. If the input was list type, then also the details field is\na list containing one or more items with error. With operations accessing a single resource, the\ndetails field contains only a single object (not an array). The possible fields in each of the item\nin the details are described per error code in the Wirepas error code descriptions.\n"
+              },
+              {
+                "$ref": "#/components/schemas/FreeFormObject"
+              }
+            ]
+          },
+          "serviceRef": {
+            "description": "Error reference identifier, which makes it possible locate related error message from server side logs.\nThis is mainly purposed for development time use, but can be benefit also when tracking production system\nproblems.\n",
+            "type": "object",
+            "properties": {
+              "serviceId": {
+                "description": "Identifier of the backend service instance being a source of the error",
+                "type": "string"
+              },
+              "errorRef": {
+                "description": "UUID type of reference to the error, which can be used to track error from server side",
+                "type": "string"
+              }
+            },
+            "required": [
+              "serviceId",
+              "errorRef"
+            ]
+          }
+        },
+        "required": [
+          "errorCode",
+          "message",
+          "serviceRef"
+        ]
+      },
+      "WirepasErrorCode": {
+        "description": "More detailed error codes describing the reason for failures. These error codes are specific\nto Wirepas backend services. The main objective of the error codes is to give more information\nrelated to the potential cause of an failure in operation. These can be then benefit e.g. when\ngiving error indications to actual end users, in internalization of error responses etc.\n\nThe error codes are mainly related to the scenarios, where server returns HTTP error 400 (Bad\nRequest) or 500 (Internal Server Error). However, an Wirepas error code might be included also in\nother errors, but the added information in these cases might be quite minimal.\n\nThe Wirepas error codes can be categorized to following groups:\n* **Client data errors**: Error codes describing the erroneous data provided by the client\n* **Client request errors**: Other client request related error codes\n* **System error codes**: Error codes giving some background on potential system level problems\n\nIn some of the cases, the details field may contain more information about the error. The details\nfield is encoded in JSON format. The contents do not have standard format, thus parsing it is not\nrecommended. Instead, it is purposed mainly for development time and debug purposes for providing\nmore insights to the actual cause of the error.\n\nThe actual error codes are listed below per category.\n\n**Client data errors**:\n* `WERR_UNKNOWN_RESOURCE`: Identified request object(s) are not found from the system. Details field\n  in the response may identify the unknown resources.\n* `WERR_UNKNOWN_FIELD`: Request object(s) contain unknown fields. Details field in the response may\n  identify the unknown resources.\n* `WERR_INVALID_FIELD_VALUE`: Values of field(s) in the request is not acceptable. Details may contain\n  information identifying the resources and fields involved.\n* `WERR_INVALID_IDENTIFIER`: The value given for the identifier field in an object is invalid. This does not\n  refer to the UUID of the object but the real world identifiers (such as network or node addresses). Details\n  field may contain additional information about the error.\n* `WERR_DUPLICATE_IDENTIFIER`: The identifier for an object is already allocated and therefore does not meet\n  the unique constraint. This does not refer to the UUID of the object but the real world identifiers (such\n  as network and node addresses). Details field may contain additional information about the error.\n* `WERR_INVALID_REFERENCE`: The reference object identifier given in the request is invalid or cannot be\n  found. Details may contain more information about erroneous objects and references.\n* `WERR_RESOURCE_IN_USE`: The resource being deleted is in use or referenced by another object so that it\n  cannot be deleted before it is freed or references removed.\n\n**Client request errors**:\n* `WERR_API_VALIDATION`: The request does not meet the requirements and constraints defined by the API\n  specification. Typical causes are e.g. malformed content, missing required fields, incorrect types or enum\n  fields, or illegal values not meeting the given (e.g. min/max) constraints.\n* `WERR_INVALID_CREDENTIALS`: The credentials provided with the client request are not available or invalid.\n* `WERR_ACCESS_NOT_ALLOWED_OPERATION`: The client does not have enough rights to perform the requested operation.\n* `WERR_ACCESS_NOT_ALLOWED_DATA`: The client does not have rights to access the requested resource.\n* `WERR_INVALID_PARAMETERS`: The URL parameters given for the request are invalid. The details may contain\n  a list of invalid parameters (InvalidParams).\n* `WERR_INVALID_HEADERS`: The header fields in request are invalid, contain invalid values, etc. The details\n  may contain a list of invalid parameters (InvalidParams).\n* `WERR_INVALID_CONTENT`: The content body of the request has invalid format / encoding.\n* `WERR_CONTENT_TOO_LARGE`: The provided content body is too large for the service to handle.\n* `WERR_MISSING_CONTENT`: The content is missing for a request that expects to have content.\n* `WERR_INVALID_QUERY`: The query filter given as a parameter for GET or advanced search request has invalid\n  syntax or contain invalid fields. Details may contain a list of invalid fields (errorFields).\n* `WERR_INVALID_QUERY_PARAMETERS`: Some of the other parameters for the search query (limit, sortBy, order,\n  or cursor) is incorrect or mismatches against other fields (e.g. cursor not matching the current parameters).\n* `WERR_INVALID_STATE`: The requested state change operation of an object is not allowed given the current\n  state of the target resource.\n* `WERR_STATE_CHANGE_NOT_ALLOWED`: The requested state change operation was not allowed (see message for further details).\n* `WERR_FAILED_RESOURCES`: The requested operation failed because there are or were failed resources or operations that\n  need to be managed before continuing.\n* `WERR_OVERLAPPING_OPERATION`: The requested operation failed, since there is an overlapping operation preventing the\n  requested operation.\n* `WERR_PRECONDITION_ERROR`: The requested operation failed because needed preconditions were not met.\n  The error cannot be bypassed with the force flag, instead the fulfilling of the preconditions must be waited on.\n* `WERR_PRECONDITION_VALIDATION`: The requested operation failed because needed preconditions were not met,\n  but the error can be bypassed using the force flag.\n\n**System error codes**:\n* `WERR_DATABASE_ERROR`: The requested operation failed due to a database connection or request failure. See\n  more details on the backend system logs.\n* `WERR_MESSAGING_ERROR`: The requested operation failed due to an internal messaging error at the backend. See\n  more details on the backend system logs.\n* `WERR_OPERATION_TIMEOUT`: The requested operation failed due to an internal operation timeout. See more\n  details on the backend system logs.\n* `WERR_GENERAL_ERROR`: The requested operation failed due to an unknown internal error at the backend. See\n  more details on the backend system logs.\n",
+        "type": "string",
+        "enum": [
+          "WERR_UNKNOWN_RESOURCE",
+          "WERR_UNKNOWN_FIELD",
+          "WERR_INVALID_FIELD_VALUE",
+          "WERR_INVALID_IDENTIFIER",
+          "WERR_DUPLICATE_IDENTIFIER",
+          "WERR_INVALID_REFERENCE",
+          "WERR_RESOURCE_IN_USE",
+          "WERR_API_VALIDATION",
+          "WERR_INVALID_CREDENTIALS",
+          "WERR_ACCESS_NOT_ALLOWED_OPERATION",
+          "WERR_ACCESS_NOT_ALLOWED_DATA",
+          "WERR_INVALID_PARAMETERS",
+          "WERR_INVALID_HEADERS",
+          "WERR_INVALID_CONTENT",
+          "WERR_CONTENT_TOO_LARGE",
+          "WERR_MISSING_CONTENT",
+          "WERR_INVALID_QUERY",
+          "WERR_INVALID_QUERY_PARAMETERS",
+          "WERR_INVALID_STATE",
+          "WERR_STATE_CHANGE_NOT_ALLOWED",
+          "WERR_FAILED_RESOURCES",
+          "WERR_OVERLAPPING_OPERATION",
+          "WERR_PRECONDITION_ERROR",
+          "WERR_PRECONDITION_VALIDATION",
+          "WERR_DATABASE_ERROR",
+          "WERR_MESSAGING_ERROR",
+          "WERR_OPERATION_TIMEOUT",
+          "WERR_GENERAL_ERROR"
+        ]
+      },
+      "ResponsePagingInformation": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "totalResultsCount": {
+                "description": "Total number of items matching the given query. This field is only available in the response\nwhen totalResultsCountOnly=true is given as a query parameter. Cursor values are not returned\nin the response.\n",
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/SimpleResponsePagingInformation"
+          }
+        ]
+      },
+      "DeleteListResponse": {
+        "type": "object",
+        "description": "List of deleted items and metadata related to the delete operation",
+        "properties": {
+          "deletedItems": {
+            "type": "array",
+            "description": "The list of UUIDs identifying the items that were deleted.",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Metadata about the delete operation",
+            "properties": {
+              "deletedCount": {
+                "description": "Number of items deleted with this operation",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "deletedCount"
+            ]
+          }
+        },
+        "required": [
+          "deletedItems",
+          "metadata"
+        ]
+      },
+      "SimpleResponsePagingInformation": {
+        "type": "object",
+        "properties": {
+          "resultsCount": {
+            "description": "The number of items returned in the result list.",
+            "type": "integer"
+          },
+          "nextCursor": {
+            "description": "A cursor pointing to the \"next\" data set, i.e. this should be given as a cursor parameter\nin the following request to get the following page in results. This is empty, if there is no\nfollowing page.\n",
+            "type": "string",
+            "format": "byte"
+          },
+          "prevCursor": {
+            "description": "A cursor pointing to the \"previous\" data set, thus when traversing backwards within the result\nset, this should be given as a cursor parameter in the following request. When this is empty,\nthere is no previous page.\n",
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Error caused by invalid client request. Potential causes are malformed request, invalid data\nfields, potential conflicts in data, etc.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "unknownResourceListErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_RESOURCE",
+                  "message": "Resource not found from service",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "71142ad3-631b-4b66-9b6e-214bd9ab1101"
+                  }
+                }
+              },
+              "unknownFieldSingleErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_FIELD",
+                  "message": "Unknown field in request",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "1d9b547d-efd1-4c44-a33c-9d954e0b5051"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Client did not provide required credentials with the request and is thus not unauthorized perform\nthe request. Client may attempt the operation again after authenticating.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notAllowedErrorExample": {
+                "value": {
+                  "errorCode": "WERR_INVALID_CREDENTIALS",
+                  "message": "None or invalid credentials provided in the request.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "4d81a884-022f-49d1-9475-03a6b5d7a86b"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Client is not authorized to complete the request. The permissions granted to the client during the\nauthentication do not allow either performing the requested operation (e.g. POST) or access the\nrequested resource object.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notAllowedErrorExample": {
+                "value": {
+                  "errorCode": "WERR_ACCESS_NOT_ALLOWED_OPERATION",
+                  "message": "Not enough privileges to perform requested operation",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "c9dc4b26-6f6a-4977-850c-8d3e5695c51b"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Requested resource is not found from the server. This can be caused either by invalid URL or by the fact\nthat the resource identified by the UUID is not anymore found from the server.\n\nThis response may not contain additional error response content.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notFoundErrorExample": {
+                "value": {
+                  "errorCode": "WERR_UNKNOWN_RESOURCE",
+                  "message": "Resource not found from service",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "49b5af2b-222e-4444-886a-9d11aaaeeeff"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Error caused by client request that is conflicting with the current server state. This error can be caused e.g.\nby an attempt to modify a non-changeable identifier field, a delete request to an object that is referenced by\nanother object with as a mandatory requirement, or an invalid state transition request.\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "conflictIdentifierErrorExample": {
+                "value": {
+                  "errorCode": "WERR_INVALID_IDENTIFIER",
+                  "message": "Identifier cannot be changed once set.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "00903f91-beaa-4a3f-a666-b043c59b2f31"
+                  }
+                }
+              },
+              "conflictInUseErrorExample": {
+                "value": {
+                  "errorCode": "WERR_RESOURCE_IN_USE",
+                  "message": "Resource is in use.",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "70494050-5715-4454-9a11-1501d9d227c1"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error occurred during the processing of the request. In general, this is caused by some\nunexpected system error (e.g. unavailability of system resources, database problems, etc.).\n\nMore details for the potential reason of the error are given by the Wirepas error in `errorCode`\nfield in error response.\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "timeoutErrorExample": {
+                "value": {
+                  "errorCode": "WERR_OPERATION_TIMEOUT",
+                  "message": "Requested operation timed out",
+                  "serviceRef": {
+                    "serviceId": "example-service-id",
+                    "errorRef": "507b535f-5acd-41f9-80d8-eee1258d6cf6"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DefaultErrorResponse": {
+        "description": "Unexpected error when handling the request. More details about the potential reason of the error are\ngiven by the HTTP error code. See e.g. https://developer.mozilla.org/en-US/docs/Web/HTTP/Status for list\nof all HTTP error codes.\n\nThe response may not contain additional error response content in the message body.\n",
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "examples": {
+      "getSitesExample": {
+        "value": {
+          "results": [
+            {
+              "uuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+              "name": "Hermia Campus",
+              "description": "Hermia Campus area in Hervanta, Tampere, Finland.",
+              "locationTypeUuid": "cebc074a-beb5-40da-a206-b259539798ff",
+              "approxCoordinates": {
+                "latitude": 61.4479067,
+                "longitude": 23.8622355,
+                "altitude": 154
+              },
+              "custom": {
+                "address": "Hermiankatu, 33720 Tampere, Finland"
+              },
+              "modificationTime": 1637679321
+            }
+          ],
+          "metadata": {
+            "resultsCount": 1
+          }
+        }
+      },
+      "getBuildingsExample": {
+        "value": {
+          "results": [
+            {
+              "uuid": "d42617c3-8e46-47ef-84fa-e2b3395ca228",
+              "name": "Hermia 3",
+              "description": "Farmi Office Building in Hermia Campus area.",
+              "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+              "approxCoordinates": {
+                "latitude": 61.4464857,
+                "longitude": 23.8624784,
+                "altitude": 156
+              },
+              "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+              "custom": {
+                "address": "Hermia 3, Visiokatu 4, 33720 Tampere, Finland"
+              },
+              "modificationTime": 1637678569
+            },
+            {
+              "uuid": "4cea05a3-caa2-4012-8848-13fcf105382a",
+              "name": "Hermia 6",
+              "description": "Hermia 6 Office Building in Hermia Campus Area",
+              "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+              "approxCoordinates": {
+                "latitude": 61.4471831,
+                "longitude": 23.8644847,
+                "altitude": 157
+              },
+              "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+              "custom": {
+                "address": "Hermia 6, Visiokatu 3, 33720 Tampere, Finland"
+              },
+              "modificationTime": 1637678632
+            }
+          ],
+          "metadata": {
+            "resultsCount": 2
+          }
+        }
+      },
+      "getFloorsExample": {
+        "value": {
+          "results": [
+            {
+              "uuid": "2da1c825-0b43-4182-a217-331582670f12",
+              "name": "2nd Floor",
+              "description": "Second floor in Hermia 3",
+              "locationTypeUuid": "3981d7ed-6c6d-42b8-912c-e7dec56168ec",
+              "sequenceNumber": 2,
+              "approxCoordinates": {
+                "latitude": 61.4464888,
+                "longitude": 23.8624822,
+                "altitude": 160
+              },
+              "parentLocationUuid": "d42617c3-8e46-47ef-84fa-e2b3395ca228",
+              "modificationTime": 1637679521
+            },
+            {
+              "uuid": "b7b67dce-84c5-4dd5-8e45-9d493c529a79",
+              "name": "3rd Floor",
+              "description": "Third floor in Hermia 3",
+              "locationTypeUuid": "3981d7ed-6c6d-42b8-912c-e7dec56168ec",
+              "sequenceNumber": 3,
+              "approxCoordinates": {
+                "latitude": 61.4464888,
+                "longitude": 23.8624822,
+                "altitude": 163
+              },
+              "parentLocationUuid": "d42617c3-8e46-47ef-84fa-e2b3395ca228",
+              "modificationTime": 1637679568
+            }
+          ],
+          "metadata": {
+            "resultsCount": 2
+          }
+        }
+      },
+      "newLocationListExample": {
+        "value": [
+          {
+            "name": "Hermia 6",
+            "description": "Hermia 6 Office Building in Hermia Campus Area",
+            "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+            "approxCoordinates": {
+              "latitude": 61.4471831,
+              "longitude": 23.8644847,
+              "altitude": 157
+            },
+            "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+            "custom": {
+              "address": "Hermia 6, Visiokatu 3, 33720 Tampere, Finland"
+            }
+          },
+          {
+            "name": "Hermia 5",
+            "description": "Hermia 5 Office Building in Hermia Campus Area",
+            "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+            "approxCoordinates": {
+              "latitude": 61.4479336,
+              "longitude": 23.8633895,
+              "altitude": 155
+            },
+            "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+            "custom": {
+              "address": "Hermia 5, Visiokatu 1, 33720 Tampere, Finland"
+            }
+          }
+        ]
+      },
+      "locationListExample": {
+        "value": [
+          {
+            "uuid": "4cea05a3-caa2-4012-8848-13fcf105382a",
+            "name": "Hermia 6",
+            "description": "Hermia 6 Office Building in Hermia Campus Area",
+            "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+            "approxCoordinates": {
+              "latitude": 61.4471831,
+              "longitude": 23.8644847,
+              "altitude": 157
+            },
+            "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+            "custom": {
+              "address": "Hermia 6, Visiokatu 3, 33720 Tampere, Finland"
+            },
+            "modificationTime": 1637678632
+          },
+          {
+            "uuid": "b92f6c5e-5546-48f2-96c9-f3ccf36cc6d6",
+            "name": "Hermia 5",
+            "description": "Hermia 5 Office Building in Hermia Campus Area",
+            "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+            "approxCoordinates": {
+              "latitude": 61.4479336,
+              "longitude": 23.8633895,
+              "altitude": 155
+            },
+            "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+            "custom": {
+              "address": "Hermia 5, Visiokatu 1, 33720 Tampere, Finland"
+            },
+            "modificationTime": 1637678633
+          }
+        ]
+      },
+      "deleteLocationListResponseExample": {
+        "value": {
+          "deletedItems": [
+            "b92f6c5e-5546-48f2-96c9-f3ccf36cc6d6"
+          ],
+          "metadata": {
+            "deletedCount": 1
+          }
+        }
+      },
+      "updateLocationListExample": {
+        "value": [
+          {
+            "uuid": "4cea05a3-caa2-4012-8848-13fcf105382a",
+            "sequenceNumber": 6,
+            "custom": {
+              "owner": "Quadoro Sustainable Real Estate Europe Private"
+            }
+          },
+          {
+            "uuid": "b92f6c5e-5546-48f2-96c9-f3ccf36cc6d6",
+            "sequenceNumber": 5,
+            "custom": {
+              "owner": "Quadoro Sustainable Real Estate Europe Private"
+            }
+          }
+        ]
+      },
+      "updatedLocationListExample": {
+        "value": [
+          {
+            "uuid": "4cea05a3-caa2-4012-8848-13fcf105382a",
+            "name": "Hermia 6",
+            "description": "Hermia 6 Office Building in Hermia Campus Area",
+            "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+            "sequenceNumber": 6,
+            "approxCoordinates": {
+              "latitude": 61.4471831,
+              "longitude": 23.8644847,
+              "altitude": 157
+            },
+            "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+            "custom": {
+              "address": "Hermia 6, Visiokatu 3, 33720 Tampere, Finland",
+              "owner": "Quadoro Sustainable Real Estate Europe Private"
+            },
+            "modificationTime": 1637679452
+          },
+          {
+            "uuid": "b92f6c5e-5546-48f2-96c9-f3ccf36cc6d6",
+            "name": "Hermia 5",
+            "description": "Hermia 5 Office Building in Hermia Campus Area",
+            "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+            "sequenceNumber": 5,
+            "approxCoordinates": {
+              "latitude": 61.4479336,
+              "longitude": 23.8633895,
+              "altitude": 155
+            },
+            "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+            "custom": {
+              "address": "Hermia 5, Visiokatu 1, 33720 Tampere, Finland",
+              "owner": "Quadoro Sustainable Real Estate Europe Private"
+            },
+            "modificationTime": 1637679452
+          }
+        ]
+      },
+      "searchLocationsExample": {
+        "value": {
+          "limit": 100,
+          "cursor": "Zj1uYW1lO25leHRVdWlkPTRjZWEwNWEzLWNhYTItNDAxMi04ODQ4LTEzZmNmMTA1MzgyYQo=",
+          "sortBy": "name",
+          "order": "asc",
+          "query": "parentLocationUuid==1e2f21ef-e1d9-4c66-9326-fa29d1847f2b;locationTypeUuid==bd670396-6e0e-4ca9-af2d-9ba40a30f1f4;modificationTime=gt=1637670000;uuid=in=(d42617c3-8e46-47ef-84fa-e2b3395ca228,4cea05a3-caa2-4012-8848-13fcf105382a)",
+          "fields": [
+            "uuid",
+            "name"
+          ]
+        }
+      },
+      "simpleSiteExample": {
+        "value": {
+          "uuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+          "name": "Hermia Campus",
+          "description": "Hermia Campus area in Hervanta, Tampere, Finland.",
+          "locationTypeUuid": "cebc074a-beb5-40da-a206-b259539798ff",
+          "approxCoordinates": {
+            "latitude": 61.4479067,
+            "longitude": 23.8622355,
+            "altitude": 154
+          },
+          "custom": {
+            "address": "Hermiankatu, 33720 Tampere, Finland"
+          },
+          "modificationTime": 1637679321
+        }
+      },
+      "simpleBuildingExample": {
+        "value": {
+          "uuid": "d42617c3-8e46-47ef-84fa-e2b3395ca228",
+          "name": "Hermia 3",
+          "description": "Farmi Office Building in Hermia Campus area.",
+          "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+          "approxCoordinates": {
+            "latitude": 61.4464857,
+            "longitude": 23.8624784,
+            "altitude": 156
+          },
+          "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+          "custom": {
+            "address": "Hermia 3, Visiokatu 4, 33720 Tampere, Finland"
+          },
+          "modificationTime": 1637678569
+        }
+      },
+      "simpleFloorExample": {
+        "value": {
+          "uuid": "2da1c825-0b43-4182-a217-331582670f12",
+          "name": "2nd Floor",
+          "description": "Second floor in Hermia 3",
+          "locationTypeUuid": "3981d7ed-6c6d-42b8-912c-e7dec56168ec",
+          "sequenceNumber": 2,
+          "approxCoordinates": {
+            "latitude": 61.4464888,
+            "longitude": 23.8624822,
+            "altitude": 160
+          },
+          "parentLocationUuid": "d42617c3-8e46-47ef-84fa-e2b3395ca228",
+          "modificationTime": 1637679521
+        }
+      },
+      "updateBuildingExample": {
+        "value": {
+          "name": "Hermia 3",
+          "description": "Farmi Office Building in Hermia Campus area.",
+          "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+          "sequenceNumber": 3,
+          "approxCoordinates": {
+            "latitude": 61.4464857,
+            "longitude": 23.8624784,
+            "altitude": 156
+          },
+          "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+          "custom": {
+            "address": "Hermia 3, Visiokatu 4, 33720 Tampere, Finland",
+            "owner": "Keva"
+          }
+        }
+      },
+      "updatedBuildingExample": {
+        "value": {
+          "uuid": "d42617c3-8e46-47ef-84fa-e2b3395ca228",
+          "name": "Hermia 3",
+          "description": "Farmi Office Building in Hermia Campus area.",
+          "locationTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+          "sequenceNumber": 3,
+          "approxCoordinates": {
+            "latitude": 61.4464857,
+            "longitude": 23.8624784,
+            "altitude": 156
+          },
+          "parentLocationUuid": "1e2f21ef-e1d9-4c66-9326-fa29d1847f2b",
+          "custom": {
+            "address": "Hermia 3, Visiokatu 4, 33720 Tampere, Finland",
+            "owner": "Keva"
+          },
+          "modificationTime": 1637679589
+        }
+      },
+      "patchUpdateLocationExample": {
+        "value": {
+          "custom": {
+            "tenant": "Wirepas Oy"
+          }
+        }
+      },
+      "patchUpdatedLocationExample": {
+        "value": {
+          "uuid": "2da1c825-0b43-4182-a217-331582670f12",
+          "name": "2nd Floor",
+          "description": "Second floor in Hermia 3",
+          "locationTypeUuid": "3981d7ed-6c6d-42b8-912c-e7dec56168ec",
+          "sequenceNumber": 2,
+          "approxCoordinates": {
+            "latitude": 61.4464888,
+            "longitude": 23.8624822,
+            "altitude": 160
+          },
+          "parentLocationUuid": "d42617c3-8e46-47ef-84fa-e2b3395ca228",
+          "custom": {
+            "tenant": "Wirepas Oy"
+          },
+          "modificationTime": 1637679997
+        }
+      },
+      "getStateAreaLocationTypesExample": {
+        "value": [
+          {
+            "uuid": "1de4b789-077f-43ef-8855-d2292cc3319e",
+            "name": "City",
+            "description": "Location type referencing to city area.",
+            "parentTypeUuid": "9b27c4be-a81d-46f0-908c-27a399d2a954",
+            "modificationTime": 1637668957
+          },
+          {
+            "uuid": "448858bd-3fd8-47ad-bea7-636ac7c53ea1",
+            "name": "Village",
+            "description": "Location type referencing to village area.",
+            "parentTypeUuid": "9b27c4be-a81d-46f0-908c-27a399d2a954",
+            "modificationTime": 1637668972
+          },
+          {
+            "uuid": "9b27c4be-a81d-46f0-908c-27a399d2a954",
+            "name": "District",
+            "description": "Location type referencing to district area.",
+            "parentTypeUuid": "8bb15daa-db60-4d1d-abc0-a39e01a63740",
+            "modificationTime": 1637668889
+          },
+          {
+            "uuid": "8bb15daa-db60-4d1d-abc0-a39e01a63740",
+            "name": "State",
+            "description": "Location type referencing to state wide area.",
+            "modificationTime": 1637668820
+          }
+        ]
+      },
+      "getTrackingLocationTypesExample": {
+        "value": [
+          {
+            "uuid": "3981d7ed-6c6d-42b8-912c-e7dec56168ec",
+            "name": "Floor",
+            "description": "Location type referencing to a single floor in a building",
+            "parentTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+            "isSequential": true,
+            "modificationTime": 1637667809
+          },
+          {
+            "uuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+            "name": "Building",
+            "description": "Location type referencing to building.",
+            "parentTypeUuid": "cebc074a-beb5-40da-a206-b259539798ff",
+            "modificationTime": 1637667778
+          },
+          {
+            "uuid": "f82e8ca1-803a-46d8-bb3a-3d01eb572a69",
+            "name": "Parking",
+            "description": "Location type referencing to parking lot type of area.",
+            "parentTypeUuid": "cebc074a-beb5-40da-a206-b259539798ff",
+            "modificationTime": 1637667761
+          },
+          {
+            "uuid": "cebc074a-beb5-40da-a206-b259539798ff",
+            "name": "Site",
+            "description": "Location type referencing to a site.",
+            "modificationTime": 1637667739
+          }
+        ]
+      },
+      "newLocationTypeListExample": {
+        "value": [
+          {
+            "name": "City",
+            "description": "Location type referencing to city area.",
+            "parentTypeUuid": "9b27c4be-a81d-46f0-908c-27a399d2a954"
+          },
+          {
+            "name": "Village",
+            "description": "Location type referencing to village area.",
+            "parentTypeUuid": "9b27c4be-a81d-46f0-908c-27a399d2a954"
+          }
+        ]
+      },
+      "locationTypeListExample": {
+        "value": [
+          {
+            "uuid": "1de4b789-077f-43ef-8855-d2292cc3319e",
+            "name": "City",
+            "description": "Location type referencing to city area.",
+            "parentTypeUuid": "9b27c4be-a81d-46f0-908c-27a399d2a954",
+            "modificationTime": 1637668957
+          },
+          {
+            "uuid": "448858bd-3fd8-47ad-bea7-636ac7c53ea1",
+            "name": "Village",
+            "description": "Location type referencing to village area.",
+            "parentTypeUuid": "9b27c4be-a81d-46f0-908c-27a399d2a954",
+            "modificationTime": 1637668972
+          }
+        ]
+      },
+      "deleteLocationTypeListResponseExample": {
+        "value": {
+          "deletedItems": [
+            "f82e8ca1-803a-46d8-bb3a-3d01eb572a69"
+          ],
+          "metadata": {
+            "deletedCount": 1
+          }
+        }
+      },
+      "locationTypeCityExample": {
+        "value": {
+          "uuid": "1de4b789-077f-43ef-8855-d2292cc3319e",
+          "name": "City",
+          "description": "Location type referencing to city type of an area.",
+          "parentTypeUuid": "9b27c4be-a81d-46f0-908c-27a399d2a954",
+          "modificationTime": 1637668957
+        }
+      },
+      "locationTypeBuildingExample": {
+        "value": {
+          "uuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+          "name": "Building",
+          "description": "Location type referencing to building.",
+          "parentTypeUuid": "cebc074a-beb5-40da-a206-b259539798ff",
+          "modificationTime": 1637667778
+        }
+      },
+      "updateLocationTypeExample": {
+        "value": {
+          "name": "Floor",
+          "description": "Location type referencing to a single floor in a building",
+          "parentTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+          "isSequential": true,
+          "isFilterType": false
+        }
+      },
+      "updatedLocationTypeExample": {
+        "value": {
+          "uuid": "3981d7ed-6c6d-42b8-912c-e7dec56168ec",
+          "name": "Floor",
+          "description": "Location type referencing to a single floor in a building",
+          "parentTypeUuid": "bd670396-6e0e-4ca9-af2d-9ba40a30f1f4",
+          "isSequential": true,
+          "isFilterType": false,
+          "modificationTime": 1637667809
+        }
+      },
+      "patchUpdateLocationTypeExample": {
+        "value": {
+          "isFilterType": false
+        }
+      }
+    }
+  }
+}

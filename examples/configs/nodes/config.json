@@ -1,0 +1,17 @@
+{
+    "name": "name",
+    "description": "description",
+    "custom": {
+        "customField1": "custom_field1",
+        "customField2": "custom_field2"
+    },
+    "address": "address",
+    "networkAddress": "network_address",
+    "coordinates": {
+        "latitude": "lat",
+        "longitude": "lon",
+        "altitude": "alt"
+    },
+    "locationName": "location_name",
+    "locationParentName": "location_parent_name"
+}

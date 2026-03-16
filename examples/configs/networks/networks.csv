@@ -1,0 +1,6 @@
+Id,name,description,address,custom_field1,custom_field2
+0,network 1,description 1,1,custom_field1 1,custom_field2 1
+1,network 2,description 2,2,custom_field1 2,custom_field2 2
+2,network 3,description 3,3,custom_field1 3,custom_field2 3
+3,network 4,description 4,4,custom_field1 4,custom_field2 4
+4,network 5,description 5,5,custom_field1 5,custom_field2 5

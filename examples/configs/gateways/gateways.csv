@@ -1,0 +1,6 @@
+,name,description,custom_field1,custom_field2,gateway_id,network_address,location_name,location_parent_name
+0,gateway 1,description 1,custom_field1 1,custom_field2 1,gateway 1,1,Grenoble Building 1,Grenoble
+1,gateway 2,description 2,custom_field1 2,custom_field2 2,gateway 2,1,Grenoble Building 2,Grenoble
+2,gateway 3,description 3,custom_field1 3,custom_field2 3,gateway 3,1,Grenoble Building 1,Grenoble
+3,gateway 4,description 4,custom_field1 4,custom_field2 4,gateway 4,1,Grenoble Building 2,Grenoble
+4,gateway 5,description 5,custom_field1 5,custom_field2 5,gateway 5,1,Grenoble Building 1,Grenoble

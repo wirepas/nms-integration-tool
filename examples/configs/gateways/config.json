@@ -1,0 +1,12 @@
+{
+    "name": "name",
+    "description": "description",
+    "custom": {
+        "customField1": "custom_field1",
+        "customField2": "custom_field2"
+    },
+    "gatewayId": "gateway_id",
+    "networkAddress": "network_address",
+    "locationName": "location_name",
+    "locationParentName": "location_parent_name"
+}
