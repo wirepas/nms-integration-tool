@@ -63,9 +63,9 @@ function export() {
   for table in "${WIREPAS_META[@]}"; do
     table=$(echo -n "${table//[[:space:]]/}")
     echo "Exporting wirepas_meta table: ${table} into ${table}.csv.gz"
-    docker exec -it wnt_postgres psql -U "$POSTGRES_USER" -d wirepas-meta -P pager=off -t -c "\copy ${table} TO STDOUT  CSV HEADER;" >exported_data/"$table".csv
+    docker exec -t wnt_postgres psql -U "$POSTGRES_USER" -d wirepas-meta -P pager=off -t -c "\copy ${table} TO STDOUT  CSV HEADER;" >exported_data/"$table".csv
   done
-  docker exec -it wnt_postgres psql -U "$POSTGRES_USER" -d wirepas-meta -P pager=off --csv -c "$SQL_LOCATION_AND_METADATA_QUERY" >exported_data/JOINED_META.csv
+  docker exec -t wnt_postgres psql -U "$POSTGRES_USER" -d wirepas-meta -P pager=off --csv -c "$SQL_LOCATION_AND_METADATA_QUERY" >exported_data/JOINED_META.csv
 }
 
 export
