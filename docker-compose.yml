@@ -1,0 +1,24 @@
+# Copyright Wirepas Oy 2026 licensed under Apache 2.0
+#
+# Please see file LICENSE for full license details.
+#
+# Usage:
+#   docker compose run --rm nms-import \
+#     --hostname <nms-host> \
+#     --client_id <id> --client_secret <secret> \
+#     --api NODES \
+#     --data /data/nodes.csv \
+#     --dataconf /data/config.json \
+#     --insecure
+#
+# Mount your local data directory by setting DATA_DIR (default: ./data):
+#   DATA_DIR=/path/to/my/csvs docker compose run --rm nms-import ...
+#
+# Reference configs are in examples/configs/<service>/
+
+services:
+  nms-import:
+    build: .
+    network_mode: host
+    volumes:
+      - ${DATA_DIR:-./data}:/data:ro
